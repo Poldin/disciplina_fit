@@ -92,6 +92,22 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       {/* Header */}
       <Header onLoginClick={() => setIsLoginOpen(true)} />
 
+      {/* Phone Number - Solo mobile e se loggato */}
+      {user && user.phone && (
+        <div className="md:hidden border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-zinc-600 dark:text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+              </svg>
+              <span className="text-sm text-zinc-900 dark:text-zinc-50 font-medium">
+                {user.phone}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* User Status Banner - Solo se loggato */}
       {user && (
         <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
@@ -348,7 +364,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
               {isLoadingPortal && !!user && subscription !== "active" 
                 ? "Caricamento..." 
                 : subscription === "active" 
-                  ? "Sei abbonato!" 
+                  ? "Abbonamento già attivo, non mollare!" 
                   : "Abbonati e non mollare!"}
             </button>
           </div>

@@ -145,6 +145,20 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             <div className="h-96 bg-linear-to-br from-zinc-200 to-zinc-300 dark:from-zinc-800 dark:to-zinc-900 rounded-2xl mb-6"></div>
           )}
 
+          {/* Bollino Iscrizione - appena sopra al titolo */}
+          {joined && (
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 border border-green-500 dark:border-green-600 rounded-full mb-4">
+              <div className="w-5 h-5 bg-green-500 dark:bg-green-600 rounded-full flex items-center justify-center shrink-0">
+                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <span className="text-green-700 dark:text-green-400 font-semibold text-sm">
+                Iscrizione eseguita, non mollare!
+              </span>
+            </div>
+          )}
+
           <div className="flex items-start justify-between mb-4">
             <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
               {discipline.title}
@@ -180,14 +194,16 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             )}
           </div>
 
-          {/* CTA Button */}
-          <button
-            onClick={handlePartecipa}
-            disabled={isJoining || joined}
-            className={`w-full sm:w-auto px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${ctaButtonClass}`}
-          >
-            {getButtonText()}
-          </button>
+          {/* CTA Button - nascosto se già iscritto */}
+          {!joined && (
+            <button
+              onClick={handlePartecipa}
+              disabled={isJoining}
+              className={`w-full sm:w-auto px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${ctaButtonClass}`}
+            >
+              {getButtonText()}
+            </button>
+          )}
         </div>
 
         {/* Description with Markdown */}
@@ -212,16 +228,18 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
           </div>
         )}
 
-        {/* Bottom CTA */}
-        <div className="mt-12 text-center">
-          <button
-            onClick={handlePartecipa}
-            disabled={isJoining || joined}
-            className={`px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${ctaButtonClass}`}
-          >
-            {getButtonText()}
-          </button>
-        </div>
+        {/* Bottom CTA o Bollino Iscrizione */}
+        {!joined && (
+          <div className="mt-12 text-center">
+            <button
+              onClick={handlePartecipa}
+              disabled={isJoining}
+              className={`px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${ctaButtonClass}`}
+            >
+              {getButtonText()}
+            </button>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
