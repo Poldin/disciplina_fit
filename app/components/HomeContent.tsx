@@ -27,6 +27,13 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       setCheckoutMessage("Abbonamento attivato con successo! Ora puoi partecipare a tutte le discipline.");
       refreshSubscription();
       window.history.replaceState({}, "", "/");
+
+      // Nascondi il messaggio dopo 6 secondi
+      const timer = setTimeout(() => {
+        setCheckoutMessage(null);
+      }, 6000);
+
+      return () => clearTimeout(timer);
     } else if (checkout === "cancel") {
       window.history.replaceState({}, "", "/");
     }

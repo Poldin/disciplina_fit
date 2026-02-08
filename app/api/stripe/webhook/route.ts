@@ -66,6 +66,10 @@ export async function POST(request: NextRequest) {
                 stripe_subscription_id: subscriptionId,
                 status: subscription.status,
                 closing_date: closingDate,
+                metadata: {
+                  cancel_at_period_end: subscription.cancel_at_period_end,
+                  canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
+                },
               })
               .eq('user_id', userId);
           } else {
@@ -78,6 +82,10 @@ export async function POST(request: NextRequest) {
                 stripe_subscription_id: subscriptionId,
                 status: subscription.status,
                 closing_date: closingDate,
+                metadata: {
+                  cancel_at_period_end: subscription.cancel_at_period_end,
+                  canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
+                },
               });
           }
         }
@@ -96,6 +104,10 @@ export async function POST(request: NextRequest) {
             .update({
               status: subscription.status,
               closing_date: closingDate,
+              metadata: {
+                cancel_at_period_end: subscription.cancel_at_period_end,
+                canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
+              },
             })
             .eq('stripe_subscription_id', subscription.id);
         }
