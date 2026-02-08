@@ -6,6 +6,7 @@ import Header from "./Header";
 import LoginDialog from "./LoginDialog";
 import Footer from "./Footer";
 import { useAuth } from "./AuthProvider";
+import { createClient } from "@/app/utils/supabase/client";
 import type { Discipline } from "@/app/utils/types";
 
 interface HomeContentProps {
@@ -16,6 +17,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  const [joinedDisciplineIds, setJoinedDisciplineIds] = useState<Set<number>>(new Set());
   const { user, subscription, refreshSubscription } = useAuth();
 
   // Controlla il risultato del checkout Stripe dall'URL
@@ -38,6 +40,29 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       window.history.replaceState({}, "", "/");
     }
   }, [refreshSubscription]);
+
+  // Carica le discipline a cui l'utente è iscritto
+  useEffect(() => {
+    const fetchJoinedDisciplines = async () => {
+      if (!user) {
+        setJoinedDisciplineIds(new Set());
+        return;
+      }
+
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("link_user_disciplines")
+        .select("discipline_id")
+        .eq("user_id", user.id);
+
+      if (data) {
+        const ids = new Set(data.map(item => item.discipline_id));
+        setJoinedDisciplineIds(ids);
+      }
+    };
+
+    fetchJoinedDisciplines();
+  }, [user]);
 
   // Gestisce il click su "Gestisci abbonamento"
   const handleManageSubscription = async () => {
@@ -247,8 +272,12 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                   )}
                 </div>
                 
-                <button className="w-full py-2 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors duration-200">
-                  Partecipa
+                <button className={`w-full py-2 font-medium rounded-lg transition-colors duration-200 ${
+                  joinedDisciplineIds.has(discipline.id)
+                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-500 dark:border-green-600"
+                    : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-50"
+                }`}>
+                  {joinedDisciplineIds.has(discipline.id) ? "In esecuzione" : "Partecipa"}
                 </button>
               </div>
             </Link>
