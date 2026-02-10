@@ -237,11 +237,12 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                   <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
                     {discipline.title}
                   </h3>
-                  {discipline.tag && (
+                  {/* Tag nascosto temporaneamente */}
+                  {/* {discipline.tag && (
                     <span className="px-2 py-1 text-xs font-medium rounded-full bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
                       {discipline.tag}
                     </span>
-                  )}
+                  )} */}
                 </div>
                 
                 <p className="text-zinc-600 dark:text-zinc-400 mb-4 text-sm">
