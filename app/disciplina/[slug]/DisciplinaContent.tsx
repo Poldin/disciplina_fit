@@ -270,8 +270,11 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
               Pronti a iniziare?
             </h3>
-            <p className="text-zinc-700 dark:text-zinc-300 mb-4 text-sm leading-relaxed">
+            <p className="text-zinc-700 dark:text-zinc-300 mb-3 text-sm leading-relaxed">
               Questo percorso richiede impegno costante. Ti supporteremo ogni giorno con messaggi motivazionali e faremo in modo che tu lo porti a termine.
+            </p>
+            <p className="text-zinc-900 dark:text-zinc-50 font-semibold mb-3 text-sm">
+              Oggi preparati, iniziamo domani!
             </p>
             <p className="text-zinc-600 dark:text-zinc-400 mb-6 text-xs">
               Se hai dubbi sulla tua salute, consulta il tuo medico prima di iniziare.
