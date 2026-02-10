@@ -13,6 +13,7 @@ CREATE TABLE public.disciplines (
   img_url text,
   lenght_days bigint,
   metadata jsonb,
+  notification_plan jsonb,
   CONSTRAINT disciplines_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.link_user_disciplines (
@@ -21,6 +22,7 @@ CREATE TABLE public.link_user_disciplines (
   user_id uuid,
   discipline_id uuid,
   metadata jsonb,
+  stopped_at timestamp with time zone,
   CONSTRAINT link_user_disciplines_pkey PRIMARY KEY (id),
   CONSTRAINT link_user_disciplines_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT link_user_disciplines_discipline_id_fkey FOREIGN KEY (discipline_id) REFERENCES public.disciplines(id)

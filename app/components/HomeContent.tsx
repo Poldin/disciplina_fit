@@ -41,7 +41,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
     }
   }, [refreshSubscription]);
 
-  // Carica le discipline a cui l'utente è iscritto
+  // Carica le discipline a cui l'utente è iscritto (solo quelle attive, non bloccate)
   useEffect(() => {
     const fetchJoinedDisciplines = async () => {
       if (!user) {
@@ -53,7 +53,8 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       const { data } = await supabase
         .from("link_user_disciplines")
         .select("discipline_id")
-        .eq("user_id", user.id);
+        .eq("user_id", user.id)
+        .is("stopped_at", null); // Solo percorsi attivi (non bloccati)
 
       if (data) {
         const ids = new Set(data.map(item => item.discipline_id));

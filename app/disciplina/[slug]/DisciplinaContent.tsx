@@ -38,7 +38,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     }
   }, [discipline.slug, refreshSubscription]);
 
-  // Controlla se l'utente è già iscritto a questa disciplina
+  // Controlla se l'utente è già iscritto a questa disciplina (e il percorso è attivo)
   const checkJoined = useCallback(async () => {
     if (!user) {
       setJoined(false);
@@ -51,6 +51,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       .select("id")
       .eq("user_id", user.id)
       .eq("discipline_id", discipline.id)
+      .is("stopped_at", null) // Solo se il percorso è attivo (non bloccato)
       .single();
 
     if (data) setJoined(true);
