@@ -268,7 +268,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-800">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
-              Pronto a iniziare?
+              Pronti a iniziare?
             </h3>
             <p className="text-zinc-700 dark:text-zinc-300 mb-4 text-sm leading-relaxed">
               Questo percorso richiede impegno costante. Ti supporteremo ogni giorno con messaggi motivazionali e faremo in modo che tu lo porti a termine.
@@ -281,13 +281,13 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
                 onClick={() => setIsConfirmOpen(false)}
                 className="flex-1 px-4 py-3 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors"
               >
-                Annulla
+                non ancora
               </button>
               <button
                 onClick={handleConfirmJoin}
                 className="flex-1 px-4 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors"
               >
-                Confermo
+                Iniziamo!
               </button>
             </div>
           </div>
