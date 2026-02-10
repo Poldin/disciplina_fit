@@ -20,6 +20,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
   const [joined, setJoined] = useState(false);
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const { user, subscription, refreshSubscription } = useAuth();
@@ -103,6 +104,34 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     }
   };
 
+  const handleStopDiscipline = async () => {
+    if (!confirm("Vuoi davvero bloccare questo percorso?")) {
+      return;
+    }
+
+    setIsStopping(true);
+    try {
+      const response = await fetch("/api/disciplines/stop", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ disciplineId: discipline.id }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error);
+      }
+
+      setJoined(false);
+    } catch (err) {
+      console.error("Stop error:", err);
+      alert("Errore nel bloccare il percorso. Riprova.");
+    } finally {
+      setIsStopping(false);
+    }
+  };
+
   const getButtonText = () => {
     if (joined) return "Sei iscritto!";
     if (isJoining) return "Iscrizione in corso...";
@@ -153,17 +182,26 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             <div className="h-96 bg-linear-to-br from-zinc-200 to-zinc-300 dark:from-zinc-800 dark:to-zinc-900 rounded-2xl mb-6"></div>
           )}
 
-          {/* Bollino Iscrizione - appena sopra al titolo */}
+          {/* Bollino Iscrizione + Pulsante Blocca */}
           {joined && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 border border-green-500 dark:border-green-600 rounded-full mb-4">
-              <div className="w-5 h-5 bg-green-500 dark:bg-green-600 rounded-full flex items-center justify-center shrink-0">
-                <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                </svg>
+            <div className="flex items-center justify-between gap-4 mb-4">
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 border border-green-500 dark:border-green-600 rounded-full">
+                <div className="w-5 h-5 bg-green-500 dark:bg-green-600 rounded-full flex items-center justify-center shrink-0">
+                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <span className="text-green-700 dark:text-green-400 font-semibold text-sm">
+                  Iscrizione eseguita, non mollare!
+                </span>
               </div>
-              <span className="text-green-700 dark:text-green-400 font-semibold text-sm">
-                Iscrizione eseguita, non mollare!
-              </span>
+              <button
+                onClick={handleStopDiscipline}
+                disabled={isStopping}
+                className="px-4 py-2 text-sm border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isStopping ? "Blocco..." : "Blocca percorso"}
+              </button>
             </div>
           )}
 

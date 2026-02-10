@@ -24,74 +24,57 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = createAdminClient();
 
-    // Verifica abbonamento attivo
-    const { data: sub } = await supabaseAdmin
-      .from('subscriptions')
-      .select('status')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .single();
-
-    if (!sub) {
-      return NextResponse.json(
-        { error: 'Abbonamento attivo richiesto per partecipare' },
-        { status: 403 }
-      );
-    }
-
-    // Verifica se già iscritto con percorso attivo
+    // Verifica se iscritto e attivo
     const { data: existing } = await supabaseAdmin
       .from('link_user_disciplines')
       .select('id')
       .eq('user_id', user.id)
       .eq('discipline_id', disciplineId)
-      .is('stopped_at', null) // Solo percorsi attivi
+      .is('stopped_at', null)
       .single();
 
-    if (existing) {
+    if (!existing) {
       return NextResponse.json(
-        { alreadyJoined: true, message: 'Sei già iscritto a questa disciplina' },
-        { status: 200 }
+        { error: 'Non sei iscritto a questa disciplina o il percorso è già bloccato' },
+        { status: 404 }
       );
     }
 
-    // Crea un nuovo record (anche se esistono record bloccati precedenti)
-    const { error: joinError } = await supabaseAdmin
+    // Blocca il percorso impostando stopped_at
+    const { error: stopError } = await supabaseAdmin
       .from('link_user_disciplines')
-      .insert({
-        user_id: user.id,
-        discipline_id: disciplineId,
-      });
+      .update({ stopped_at: new Date().toISOString() })
+      .eq('id', existing.id);
 
-    if (joinError) {
-      console.error('Join error:', joinError);
+    if (stopError) {
+      console.error('Stop error:', stopError);
       return NextResponse.json(
-        { error: "Errore nell'iscrizione alla disciplina" },
+        { error: "Errore nel bloccare il percorso" },
         { status: 500 }
       );
     }
 
-    // Incrementa il contatore partecipanti
+    // Decrementa il contatore partecipanti
     const { data: discipline } = await supabaseAdmin
       .from('disciplines')
       .select('subscribers')
       .eq('id', disciplineId)
       .single();
 
-    if (discipline) {
+    if (discipline && discipline.subscribers && discipline.subscribers > 0) {
       await supabaseAdmin
         .from('disciplines')
-        .update({ subscribers: (discipline.subscribers || 0) + 1 })
+        .update({ subscribers: discipline.subscribers - 1 })
         .eq('id', disciplineId);
     }
 
     return NextResponse.json({
       success: true,
-      message: 'Iscritto con successo!',
+      message: 'Percorso bloccato con successo',
     });
 
   } catch (error) {
-    console.error('Join discipline error:', error);
+    console.error('Stop discipline error:', error);
     return NextResponse.json(
       { error: 'Errore del server. Riprova più tardi.' },
       { status: 500 }
