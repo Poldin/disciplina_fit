@@ -18,6 +18,7 @@ interface DisciplinaContentProps {
 export default function DisciplinaContent({ discipline }: DisciplinaContentProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [joined, setJoined] = useState(false);
   const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
@@ -72,7 +73,13 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       return;
     }
 
-    // Step 3: Iscrizione alla disciplina
+    // Step 3: Mostra dialog di conferma
+    setIsConfirmOpen(true);
+  };
+
+  const handleConfirmJoin = async () => {
+    // Iscrizione alla disciplina
+    setIsConfirmOpen(false);
     setIsJoining(true);
     try {
       const response = await fetch("/api/disciplines/join", {
@@ -163,11 +170,12 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
               {discipline.title}
             </h1>
-            {discipline.tag && (
+            {/* Tag nascosto temporaneamente */}
+            {/* {discipline.tag && (
               <span className="px-3 py-1 text-sm font-medium rounded-full bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">
                 {discipline.tag}
               </span>
-            )}
+            )} */}
           </div>
 
           <p className="text-xl text-zinc-600 dark:text-zinc-400 mb-6">
@@ -254,6 +262,37 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         onClose={() => setIsSubscriptionOpen(false)}
         disciplineSlug={discipline.slug}
       />
+
+      {/* Confirm Dialog */}
+      {isConfirmOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-800">
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
+              Pronto a iniziare?
+            </h3>
+            <p className="text-zinc-700 dark:text-zinc-300 mb-4 text-sm leading-relaxed">
+              Questo percorso richiede impegno costante. Ti supporteremo ogni giorno con messaggi motivazionali e faremo in modo che tu lo porti a termine.
+            </p>
+            <p className="text-zinc-600 dark:text-zinc-400 mb-6 text-xs">
+              Se hai dubbi sulla tua salute, consulta il tuo medico prima di iniziare.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsConfirmOpen(false)}
+                className="flex-1 px-4 py-3 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleConfirmJoin}
+                className="flex-1 px-4 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors"
+              >
+                Confermo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
