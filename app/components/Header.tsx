@@ -17,7 +17,7 @@ export default function Header({ onLoginClick }: HeaderProps) {
           {/* Brand */}
           <Link href="/">
             <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 cursor-pointer hover:opacity-80 transition-opacity">
-              disciplinaFit
+              disciplinaFIT
             </h1>
           </Link>
           
