@@ -135,8 +135,8 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                         Abbonamento attivo
                       </p>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                        {subscriptionInfo.cancelAtPeriodEnd && subscriptionInfo.closingDate
-                          ? `Cancellazione effettiva il ${new Date(subscriptionInfo.closingDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}`
+                        {subscriptionInfo.closingDate
+                          ? `Abbonamento disattivato, valido fino al ${new Date(subscriptionInfo.closingDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}`
                           : "Hai accesso illimitato a tutte le discipline"}
                       </p>
                     </div>

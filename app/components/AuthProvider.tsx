@@ -6,12 +6,10 @@ import type { User } from "@supabase/supabase-js";
 
 export type SubscriptionStatus = "active" | "canceled" | "past_due" | "trialing" | "incomplete" | "none" | "loading";
 
-/** Stato abbonamento con dettagli per UX (cancellazione richiesta, data scadenza) */
+/** Stato abbonamento con dettagli per UX (scadenza/valido fino al) */
 export type SubscriptionInfo = {
   status: SubscriptionStatus;
-  /** true se l'utente ha richiesto la cancellazione, effettiva a closingDate */
-  cancelAtPeriodEnd: boolean;
-  /** data ISO in cui l'abbonamento scade (o diventa effettiva la cancellazione) */
+  /** data ISO in cui l'abbonamento scade (o diventa effettiva la cancellazione) - usata per mostrare "valido fino al..." */
   closingDate: string | null;
   /** true se l'utente ha accesso alle discipline (active, trialing, past_due) */
   hasAccess: boolean;
@@ -39,17 +37,15 @@ const AuthContext = createContext<AuthContextType>({
 const ACCESS_STATUSES: SubscriptionStatus[] = ["active", "past_due", "trialing"];
 
 function buildSubscriptionInfo(
-  data: { status: string; closing_date: string | null; metadata: Record<string, unknown> | null } | null
+  data: { status: string; closing_date: string | null } | null
 ): SubscriptionInfo {
   if (!data) {
-    return { status: "none", cancelAtPeriodEnd: false, closingDate: null, hasAccess: false };
+    return { status: "none", closingDate: null, hasAccess: false };
   }
   const status = data.status as SubscriptionStatus;
-  const cancelAtPeriodEnd = Boolean((data.metadata as Record<string, unknown>)?.cancel_at_period_end);
   const hasAccess = ACCESS_STATUSES.includes(status);
   return {
     status,
-    cancelAtPeriodEnd,
     closingDate: data.closing_date,
     hasAccess,
   };
@@ -67,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Recupera la subscription più recente (qualsiasi stato) per avere tutti i dettagli
       const { data } = await supabase
         .from("subscriptions")
-        .select("status, closing_date, metadata")
+        .select("status, closing_date")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)

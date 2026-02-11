@@ -66,10 +66,6 @@ export async function POST(request: NextRequest) {
                 stripe_subscription_id: subscriptionId,
                 status: subscription.status,
                 closing_date: closingDate,
-                metadata: {
-                  cancel_at_period_end: subscription.cancel_at_period_end,
-                  canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
-                },
               })
               .eq('user_id', userId);
           } else {
@@ -82,35 +78,24 @@ export async function POST(request: NextRequest) {
                 stripe_subscription_id: subscriptionId,
                 status: subscription.status,
                 closing_date: closingDate,
-                metadata: {
-                  cancel_at_period_end: subscription.cancel_at_period_end,
-                  canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
-                },
               });
           }
         }
         break;
       }
 
-      // Subscription aggiornata (rinnovo, cambio piano, ecc.)
+      // Subscription aggiornata (rinnovo, cambio piano, cancellazione richiesta, ecc.)
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.supabase_user_id;
         const closingDate = getSubscriptionPeriodEnd(subscription);
 
-        if (userId) {
-          await supabaseAdmin
-            .from('subscriptions')
-            .update({
-              status: subscription.status,
-              closing_date: closingDate,
-              metadata: {
-                cancel_at_period_end: subscription.cancel_at_period_end,
-                canceled_at: subscription.canceled_at ? new Date(subscription.canceled_at * 1000).toISOString() : null,
-              },
-            })
-            .eq('stripe_subscription_id', subscription.id);
-        }
+        await supabaseAdmin
+          .from('subscriptions')
+          .update({
+            status: subscription.status,
+            closing_date: closingDate,
+          })
+          .eq('stripe_subscription_id', subscription.id);
         break;
       }
 
