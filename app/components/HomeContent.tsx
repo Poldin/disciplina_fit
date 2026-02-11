@@ -17,6 +17,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [joinedDisciplineIds, setJoinedDisciplineIds] = useState<Set<string>>(new Set());
+  const [activeDiscipline, setActiveDiscipline] = useState<Discipline | null>(null);
   const { user, subscription, subscriptionInfo, refreshSubscription } = useAuth();
 
   // Pulisce l'URL dopo il ritorno da Stripe Checkout
@@ -29,28 +30,36 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
     }
   }, [refreshSubscription]);
 
-  // Carica le discipline a cui l'utente è iscritto (solo quelle attive, non bloccate)
+  // Carica la disciplina attiva dell'utente (una sola alla volta)
   useEffect(() => {
-    const fetchJoinedDisciplines = async () => {
+    const fetchActiveDiscipline = async () => {
       if (!user) {
         setJoinedDisciplineIds(new Set());
+        setActiveDiscipline(null);
         return;
       }
 
       const supabase = createClient();
       const { data } = await supabase
         .from("link_user_disciplines")
-        .select("discipline_id")
+        .select("discipline_id, disciplines(id, title, slug, img_url, short_desc, lenght_days)")
         .eq("user_id", user.id)
-        .is("stopped_at", null); // Solo percorsi attivi (non bloccati)
+        .is("stopped_at", null) // Solo percorsi attivi (non bloccati)
+        .limit(1)
+        .single();
 
       if (data) {
-        const ids = new Set(data.map(item => item.discipline_id));
-        setJoinedDisciplineIds(ids);
+        setJoinedDisciplineIds(new Set([data.discipline_id]));
+        // Il join restituisce un oggetto (perché è una relazione many-to-one)
+        const disc = data.disciplines as unknown as Discipline;
+        setActiveDiscipline(disc ?? null);
+      } else {
+        setJoinedDisciplineIds(new Set());
+        setActiveDiscipline(null);
       }
     };
 
-    fetchJoinedDisciplines();
+    fetchActiveDiscipline();
   }, [user]);
 
   // Gestisce il click su "Gestisci abbonamento"
@@ -202,6 +211,51 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Disciplina attiva */}
+      {user && subscriptionInfo?.hasAccess && activeDiscipline && (
+        <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
+              La tua challenge in corso
+            </p>
+            <Link
+              href={`/disciplina/${activeDiscipline.slug}`}
+              className="flex items-center gap-4 group"
+            >
+              {activeDiscipline.img_url ? (
+                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700">
+                  <img
+                    src={activeDiscipline.img_url}
+                    alt={activeDiscipline.title || "Disciplina"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-14 h-14 rounded-xl bg-linear-to-br from-zinc-200 to-zinc-300 dark:from-zinc-800 dark:to-zinc-900 shrink-0"></div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:underline truncate">
+                  {activeDiscipline.title}
+                </p>
+                {activeDiscipline.lenght_days && (
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {activeDiscipline.lenght_days} giorni
+                  </p>
+                )}
+              </div>
+              <div className="shrink-0 flex items-center gap-2">
+                <span className="hidden sm:inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-500/30 dark:border-green-600/30">
+                  In corso
+                </span>
+                <svg className="w-5 h-5 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-50 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
+            </Link>
           </div>
         </div>
       )}

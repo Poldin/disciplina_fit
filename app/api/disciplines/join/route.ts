@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { disciplineId } = body;
+    const { disciplineId, replaceActive } = body;
 
     if (!disciplineId) {
       return NextResponse.json(
@@ -41,13 +41,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verifica se già iscritto con percorso attivo
+    // Verifica se già iscritto con percorso attivo a questa stessa disciplina
     const { data: existing } = await supabaseAdmin
       .from('link_user_disciplines')
       .select('id')
       .eq('user_id', user.id)
       .eq('discipline_id', disciplineId)
-      .is('stopped_at', null) // Solo percorsi attivi
+      .is('stopped_at', null)
       .single();
 
     if (existing) {
@@ -55,6 +55,49 @@ export async function POST(request: NextRequest) {
         { alreadyJoined: true, message: 'Sei già iscritto a questa disciplina' },
         { status: 200 }
       );
+    }
+
+    // Blocca tutte le discipline attive dell'utente (una alla volta)
+    // Se replaceActive è true, l'utente ha confermato di voler sostituire la challenge attiva
+    const { data: activeDisciplines } = await supabaseAdmin
+      .from('link_user_disciplines')
+      .select('id, discipline_id')
+      .eq('user_id', user.id)
+      .is('stopped_at', null);
+
+    if (activeDisciplines && activeDisciplines.length > 0) {
+      if (!replaceActive) {
+        // C'è già una disciplina attiva e l'utente non ha confermato la sostituzione
+        return NextResponse.json(
+          { error: 'Hai già una disciplina attiva', code: 'ACTIVE_DISCIPLINE_EXISTS' },
+          { status: 409 }
+        );
+      }
+
+      // Blocca tutte le discipline attive
+      const now = new Date().toISOString();
+      const activeIds = activeDisciplines.map((d) => d.id);
+
+      await supabaseAdmin
+        .from('link_user_disciplines')
+        .update({ stopped_at: now })
+        .in('id', activeIds);
+
+      // Decrementa i contatori partecipanti delle discipline bloccate
+      for (const active of activeDisciplines) {
+        const { data: disc } = await supabaseAdmin
+          .from('disciplines')
+          .select('subscribers')
+          .eq('id', active.discipline_id)
+          .single();
+
+        if (disc && disc.subscribers && disc.subscribers > 0) {
+          await supabaseAdmin
+            .from('disciplines')
+            .update({ subscribers: disc.subscribers - 1 })
+            .eq('id', active.discipline_id);
+        }
+      }
     }
 
     // Crea un nuovo record (anche se esistono record bloccati precedenti)

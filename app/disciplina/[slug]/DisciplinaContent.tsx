@@ -11,6 +11,14 @@ import { useAuth } from "@/app/components/AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
 import type { Discipline } from "@/app/utils/types";
 
+/** Disciplina attiva dell'utente (diversa da quella corrente) */
+type ActiveDisciplineInfo = {
+  id: string;
+  title: string | null;
+  img_url: string | null;
+  slug: string;
+};
+
 interface DisciplinaContentProps {
   discipline: Discipline;
 }
@@ -19,10 +27,12 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isReplaceOpen, setIsReplaceOpen] = useState(false);
   const [isStopConfirmOpen, setIsStopConfirmOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [joined, setJoined] = useState(false);
+  const [activeDiscipline, setActiveDiscipline] = useState<ActiveDisciplineInfo | null>(null);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
 
   // Pulisce l'URL dopo il ritorno da Stripe Checkout
@@ -35,23 +45,49 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     }
   }, [discipline.slug, refreshSubscription]);
 
-  // Controlla se l'utente è già iscritto a questa disciplina (e il percorso è attivo)
+  // Controlla se l'utente è già iscritto a questa disciplina e se ha un'altra disciplina attiva
   const checkJoined = useCallback(async () => {
     if (!user) {
       setJoined(false);
+      setActiveDiscipline(null);
       return;
     }
 
     const supabase = createClient();
-    const { data } = await supabase
+
+    // Controlla se è iscritto a QUESTA disciplina
+    const { data: thisJoined } = await supabase
       .from("link_user_disciplines")
       .select("id")
       .eq("user_id", user.id)
       .eq("discipline_id", discipline.id)
-      .is("stopped_at", null) // Solo se il percorso è attivo (non bloccato)
+      .is("stopped_at", null)
       .single();
 
-    if (data) setJoined(true);
+    if (thisJoined) {
+      setJoined(true);
+      setActiveDiscipline(null);
+      return;
+    }
+
+    setJoined(false);
+
+    // Controlla se ha un'ALTRA disciplina attiva
+    const { data: otherActive } = await supabase
+      .from("link_user_disciplines")
+      .select("discipline_id, disciplines(id, title, img_url, slug)")
+      .eq("user_id", user.id)
+      .is("stopped_at", null)
+      .neq("discipline_id", discipline.id)
+      .limit(1)
+      .single();
+
+    if (otherActive?.disciplines) {
+      const disc = otherActive.disciplines as unknown as ActiveDisciplineInfo;
+      setActiveDiscipline(disc);
+    } else {
+      setActiveDiscipline(null);
+    }
   }, [user, discipline.id]);
 
   useEffect(() => {
@@ -71,19 +107,28 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       return;
     }
 
-    // Step 3: Mostra dialog di conferma
+    // Step 3: Se c'è già una disciplina attiva diversa, mostra dialog di sostituzione
+    if (activeDiscipline) {
+      setIsReplaceOpen(true);
+      return;
+    }
+
+    // Step 4: Nessuna disciplina attiva, mostra conferma normale
     setIsConfirmOpen(true);
   };
 
-  const handleConfirmJoin = async () => {
-    // Iscrizione alla disciplina
+  const handleConfirmJoin = async (replaceActive = false) => {
     setIsConfirmOpen(false);
+    setIsReplaceOpen(false);
     setIsJoining(true);
     try {
       const response = await fetch("/api/disciplines/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ disciplineId: discipline.id }),
+        body: JSON.stringify({
+          disciplineId: discipline.id,
+          replaceActive,
+        }),
       });
 
       const data = await response.json();
@@ -93,6 +138,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       }
 
       setJoined(true);
+      setActiveDiscipline(null);
     } catch (err) {
       console.error("Join error:", err);
     } finally {
@@ -323,7 +369,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         </div>
       )}
 
-      {/* Confirm Dialog */}
+      {/* Confirm Dialog — nessuna disciplina attiva */}
       {isConfirmOpen && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-800">
@@ -347,10 +393,64 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
                 non ancora
               </button>
               <button
-                onClick={handleConfirmJoin}
+                onClick={() => handleConfirmJoin(false)}
                 className="flex-1 px-4 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors"
               >
                 Iniziamo!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Replace Dialog — c'è già una disciplina attiva */}
+      {isReplaceOpen && activeDiscipline && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-800">
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
+              Hai già una challenge attiva
+            </h3>
+
+            {/* Card della disciplina attiva */}
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 mb-4">
+              {activeDiscipline.img_url ? (
+                <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
+                  <img
+                    src={activeDiscipline.img_url}
+                    alt={activeDiscipline.title || "Disciplina"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-12 h-12 rounded-lg bg-linear-to-br from-zinc-300 to-zinc-400 dark:from-zinc-700 dark:to-zinc-800 shrink-0"></div>
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
+                  {activeDiscipline.title}
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-400 font-medium">In corso</p>
+              </div>
+            </div>
+
+            <p className="text-zinc-700 dark:text-zinc-300 mb-2 text-sm leading-relaxed">
+              Stai già seguendo una challenge. Focalizzati su una alla volta per ottenere risultati veri.
+            </p>
+            <p className="text-zinc-600 dark:text-zinc-400 mb-6 text-xs leading-relaxed">
+              Se vuoi puoi procedere con la nuova challenge: bloccheremo quella attuale in automatico.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsReplaceOpen(false)}
+                className="flex-1 px-4 py-3 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={() => handleConfirmJoin(true)}
+                className="flex-1 px-4 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors"
+              >
+                Sì, cominciamo
               </button>
             </div>
           </div>
