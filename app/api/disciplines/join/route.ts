@@ -24,12 +24,14 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = createAdminClient();
 
-    // Verifica abbonamento attivo
+    // Verifica abbonamento con accesso (active, trialing, past_due)
     const { data: sub } = await supabaseAdmin
       .from('subscriptions')
       .select('status')
       .eq('user_id', user.id)
-      .eq('status', 'active')
+      .in('status', ['active', 'trialing', 'past_due'])
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
     if (!sub) {

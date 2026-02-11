@@ -15,28 +15,16 @@ interface HomeContentProps {
 
 export default function HomeContent({ disciplines }: HomeContentProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [joinedDisciplineIds, setJoinedDisciplineIds] = useState<Set<string>>(new Set());
-  const { user, subscription, refreshSubscription } = useAuth();
+  const { user, subscription, subscriptionInfo, refreshSubscription } = useAuth();
 
-  // Controlla il risultato del checkout Stripe dall'URL
+  // Pulisce l'URL dopo il ritorno da Stripe Checkout
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
-
-    if (checkout === "success") {
-      setCheckoutMessage("Abbonamento attivato con successo! Ora puoi partecipare a tutte le discipline.");
+    if (checkout === "success" || checkout === "cancel") {
       refreshSubscription();
-      window.history.replaceState({}, "", "/");
-
-      // Nascondi il messaggio dopo 6 secondi
-      const timer = setTimeout(() => {
-        setCheckoutMessage(null);
-      }, 6000);
-
-      return () => clearTimeout(timer);
-    } else if (checkout === "cancel") {
       window.history.replaceState({}, "", "/");
     }
   }, [refreshSubscription]);
@@ -135,7 +123,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex items-center gap-3">
-                {subscription === "active" ? (
+                {subscriptionInfo?.hasAccess ? (
                   <>
                     <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center shrink-0">
                       <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,7 +135,25 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                         Abbonamento attivo
                       </p>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Hai accesso illimitato a tutte le discipline
+                        {subscriptionInfo.cancelAtPeriodEnd && subscriptionInfo.closingDate
+                          ? `Cancellazione effettiva il ${new Date(subscriptionInfo.closingDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}`
+                          : "Hai accesso illimitato a tutte le discipline"}
+                      </p>
+                    </div>
+                  </>
+                ) : subscription === "incomplete" ? (
+                  <>
+                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center shrink-0">
+                      <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                        Abbonamento da attivare
+                      </p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                        Completa il pagamento per attivare l&apos;accesso
                       </p>
                     </div>
                   </>
@@ -170,13 +176,21 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 )}
               </div>
 
-              {subscription === "active" ? (
+              {subscriptionInfo?.hasAccess ? (
                 <button
                   onClick={handleManageSubscription}
                   disabled={isLoadingPortal}
                   className="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoadingPortal ? "Caricamento..." : "Gestisci abbonamento"}
+                </button>
+              ) : subscription === "incomplete" ? (
+                <button
+                  onClick={handleManageSubscription}
+                  disabled={isLoadingPortal}
+                  className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoadingPortal ? "Caricamento..." : "Completa il pagamento"}
                 </button>
               ) : (
                 <button
@@ -194,13 +208,6 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Checkout success message */}
-        {checkoutMessage && (
-          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 text-sm">
-            {checkoutMessage}
-          </div>
-        )}
-
         {/* Section Title */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
@@ -376,7 +383,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 }
 
                 // Step 2: Verifica abbonamento - vai direttamente al checkout
-                if (subscription !== "active") {
+                if (!subscriptionInfo?.hasAccess) {
                   handleSubscribe();
                   return;
                 }
@@ -384,12 +391,12 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 // Già abbonato - Nessuna azione necessaria
                 // L'utente può semplicemente scegliere le discipline dalla pagina
               }}
-              disabled={isLoadingPortal && !!user && subscription !== "active"}
+              disabled={isLoadingPortal && !!user && !subscriptionInfo?.hasAccess}
               className="px-8 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoadingPortal && !!user && subscription !== "active" 
+              {isLoadingPortal && !!user && !subscriptionInfo?.hasAccess 
                 ? "Caricamento..." 
-                : subscription === "active" 
+                : subscriptionInfo?.hasAccess 
                   ? "Abbonamento già attivo, non mollare!" 
                   : "Abbonati e non mollare!"}
             </button>

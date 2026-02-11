@@ -22,19 +22,14 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [isJoining, setIsJoining] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [joined, setJoined] = useState(false);
-  const [checkoutMessage, setCheckoutMessage] = useState<string | null>(null);
-  const { user, subscription, refreshSubscription } = useAuth();
+  const { user, subscriptionInfo, refreshSubscription } = useAuth();
 
-  // Controlla il risultato del checkout Stripe dall'URL
+  // Pulisce l'URL dopo il ritorno da Stripe Checkout
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const checkout = params.get("checkout");
-
-    if (checkout === "success") {
-      setCheckoutMessage("Abbonamento attivato con successo! Ora puoi partecipare.");
+    if (checkout === "success" || checkout === "cancel") {
       refreshSubscription();
-      window.history.replaceState({}, "", `/disciplina/${discipline.slug}`);
-    } else if (checkout === "cancel") {
       window.history.replaceState({}, "", `/disciplina/${discipline.slug}`);
     }
   }, [discipline.slug, refreshSubscription]);
@@ -70,7 +65,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     }
 
     // Step 2: Verifica abbonamento
-    if (subscription !== "active") {
+    if (!subscriptionInfo?.hasAccess) {
       setIsSubscriptionOpen(true);
       return;
     }
@@ -149,13 +144,6 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Checkout success message */}
-        {checkoutMessage && (
-          <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-green-700 dark:text-green-400 text-sm">
-            {checkoutMessage}
-          </div>
-        )}
-
         {/* Back Link */}
         <Link
           href="/"

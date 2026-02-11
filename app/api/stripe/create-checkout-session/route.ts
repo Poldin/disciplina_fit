@@ -25,15 +25,23 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = createAdminClient();
 
-    // Controlla se ha già un abbonamento attivo
-    const { data: activeSub } = await supabaseAdmin
+    // Blocca se ha già un abbonamento attivo, in corso o da completare
+    const { data: existingSub } = await supabaseAdmin
       .from('subscriptions')
-      .select('id')
+      .select('id, status')
       .eq('user_id', user.id)
-      .eq('status', 'active')
+      .in('status', ['active', 'trialing', 'past_due', 'incomplete'])
+      .order('created_at', { ascending: false })
+      .limit(1)
       .single();
 
-    if (activeSub) {
+    if (existingSub) {
+      if (existingSub.status === 'incomplete') {
+        return NextResponse.json(
+          { error: 'Hai un abbonamento in attesa. Completa il pagamento dal portale.' },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
         { error: 'Hai già un abbonamento attivo' },
         { status: 400 }

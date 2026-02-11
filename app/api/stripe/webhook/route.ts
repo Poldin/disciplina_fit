@@ -114,14 +114,16 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // Subscription cancellata
+      // Subscription cancellata (fine periodo o cancellazione immediata)
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
+        const closingDate = getSubscriptionPeriodEnd(subscription);
 
         await supabaseAdmin
           .from('subscriptions')
           .update({
             status: 'canceled',
+            closing_date: closingDate,
           })
           .eq('stripe_subscription_id', subscription.id);
         break;
