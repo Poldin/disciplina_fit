@@ -19,6 +19,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [isStopConfirmOpen, setIsStopConfirmOpen] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [joined, setJoined] = useState(false);
@@ -99,11 +100,12 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     }
   };
 
-  const handleStopDiscipline = async () => {
-    if (!confirm("Vuoi davvero bloccare questo percorso?")) {
-      return;
-    }
+  const handleStopDiscipline = () => {
+    setIsStopConfirmOpen(true);
+  };
 
+  const handleConfirmStop = async () => {
+    setIsStopConfirmOpen(false);
     setIsStopping(true);
     try {
       const response = await fetch("/api/disciplines/stop", {
@@ -186,8 +188,11 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               <button
                 onClick={handleStopDiscipline}
                 disabled={isStopping}
-                className="px-4 py-2 text-sm border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm bg-zinc-700 hover:bg-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-200 dark:text-zinc-300 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
                 {isStopping ? "Blocco..." : "Blocca percorso"}
               </button>
             </div>
@@ -289,6 +294,34 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         onClose={() => setIsSubscriptionOpen(false)}
         disciplineSlug={discipline.slug}
       />
+
+      {/* Stop/Block Confirm Dialog */}
+      {isStopConfirmOpen && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-800">
+            <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
+              Vuoi davvero mollare?
+            </h3>
+            <p className="text-zinc-700 dark:text-zinc-300 mb-6 text-sm leading-relaxed">
+              Vuoi davvero mollare e procedere al blocco della challenge?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsStopConfirmOpen(false)}
+                className="flex-1 px-4 py-3 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors"
+              >
+                Annulla
+              </button>
+              <button
+                onClick={handleConfirmStop}
+                className="flex-1 px-4 py-3 bg-zinc-700 hover:bg-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-200 dark:text-zinc-300 font-semibold rounded-lg transition-colors"
+              >
+                Sì, blocca
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Confirm Dialog */}
       {isConfirmOpen && (
