@@ -267,6 +267,9 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
             Scegli la tua disciplina
           </h2>
+          <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-2">
+            Prenderti cura di te, del tuo equilibrio fisico, richiede scelte da perseguire nel tempo con disciplina. Non è uno sprint: è una maratona.
+          </p>
           <p className="text-lg text-zinc-600 dark:text-zinc-400">
             Scegli la disciplina che risuona in te e trasforma i tuoi obiettivi in abitudini quotidiane. Non mollare!
           </p>
