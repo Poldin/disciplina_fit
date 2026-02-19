@@ -428,8 +428,11 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
               <span className="text-5xl font-bold text-zinc-900 dark:text-zinc-50">€5,99</span>
               <span className="text-xl text-zinc-600 dark:text-zinc-400">/mese</span>
             </div>
-            <p className="text-zinc-600 dark:text-zinc-400 mb-6">
+            <p className="text-zinc-600 dark:text-zinc-400 mb-4">
               Accesso illimitato a tutte le challenge • Messaggi di disciplina WhatsApp quotidiani • Cancella quando vuoi
+            </p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-500 mb-6 max-w-sm mx-auto leading-relaxed">
+              Perchè devo pagare un abbonamento? Perchè chi investe, non molla (e per coprire i costi del servizio)
             </p>
             <button 
               onClick={() => {
