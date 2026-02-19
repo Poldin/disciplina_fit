@@ -87,7 +87,7 @@ export default function SubscriptionDialog({ isOpen, onClose, disciplineSlug }: 
         {/* Price Card */}
         <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-6 mb-6">
           <div className="text-center mb-4">
-            <span className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">€4,99</span>
+            <span className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">€5,99</span>
             <span className="text-zinc-600 dark:text-zinc-400">/mese</span>
           </div>
           <ul className="text-sm text-zinc-600 dark:text-zinc-400 space-y-2">

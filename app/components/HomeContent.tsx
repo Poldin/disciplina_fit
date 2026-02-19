@@ -207,7 +207,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                   disabled={isLoadingPortal}
                   className="px-4 py-2 text-sm bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isLoadingPortal ? "Caricamento..." : "Abbonati a €4,99/mese"}
+                  {isLoadingPortal ? "Caricamento..." : "Abbonati a €5,99/mese"}
                 </button>
               )}
             </div>
@@ -425,7 +425,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
           {/* Pricing */}
           <div className="text-center">
             <div className="mb-4">
-              <span className="text-5xl font-bold text-zinc-900 dark:text-zinc-50">€4,99</span>
+              <span className="text-5xl font-bold text-zinc-900 dark:text-zinc-50">€5,99</span>
               <span className="text-xl text-zinc-600 dark:text-zinc-400">/mese</span>
             </div>
             <p className="text-zinc-600 dark:text-zinc-400 mb-6">
