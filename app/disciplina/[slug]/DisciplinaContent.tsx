@@ -295,7 +295,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         {/* Description with Markdown */}
         {discipline.long_desc && (
           <div className="prose prose-zinc dark:prose-invert max-w-none">
-            <div className="bg-white dark:bg-zinc-900 rounded-xl p-8 border border-zinc-200 dark:border-zinc-800">
+            <div className="">
               <ReactMarkdown
                 components={{
                   h1: ({node, ...props}) => <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-4" {...props} />,
@@ -320,7 +320,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             <button
               onClick={handlePartecipa}
               disabled={isJoining}
-              className={`px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${ctaButtonClass}`}
+              className={`w-full sm:w-auto px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${ctaButtonClass}`}
             >
               {getButtonText()}
             </button>
