@@ -217,17 +217,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       {/* Header */}
       <Header onLoginClick={() => setIsLoginOpen(true)} />
 
-      {user && (user.user_metadata?.phone || user.phone) && (
-  <div className="md:hidden border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-    <div className="max-w-7xl mx-auto px-4 py-3">
-      <span className="text-sm text-zinc-600 dark:text-zinc-400">
-        {user.user_metadata?.phone || user.phone}
-      </span>
-    </div>
-  </div>
-)}
-
-{user && (
+      {user && (
   <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
       <div className="flex items-center justify-between gap-4 flex-wrap">

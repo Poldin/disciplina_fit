@@ -115,17 +115,6 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       {/* Header */}
       <Header onLoginClick={() => setIsLoginOpen(true)} />
 
-      {/* Phone Number - Solo mobile e se loggato */}
-      {user && (user.user_metadata?.phone || user.phone) && (
-        <div className="md:hidden border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">
-              {user.user_metadata?.phone || user.phone}
-            </span>
-          </div>
-        </div>
-      )}
-
       {/* User Status Banner - Solo se loggato */}
       {user && (
         <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
@@ -265,7 +254,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
         {/* Section Title */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-            Scegli la tua disciplina
+            Prenditi cura di te, con disciplina.
           </h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-2">
             Prenderti cura di te, del tuo equilibrio fisico, richiede scelte da perseguire nel tempo con disciplina. Non è uno sprint: è una maratona.
