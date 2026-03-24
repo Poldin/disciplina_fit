@@ -10,7 +10,7 @@ export default function ProfileNameGate({
 }) {
   const { user, loading, userName, refreshProfile } = useAuth();
 
-  const showNameDialog = !loading && user && !userName;
+  const showNameDialog = Boolean(!loading && user && !userName);
 
   return (
     <>
