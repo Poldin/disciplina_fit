@@ -131,7 +131,17 @@ export async function POST(request: NextRequest) {
     const plan = disciplineData?.notification_plan as NotificationPlan | null;
     if (plan) {
       const nowUtc = new Date();
-      await populateMessageSchedule(supabaseAdmin, newLink.id, plan, nowUtc);
+      const scheduleResult = await populateMessageSchedule(supabaseAdmin, newLink.id, plan, nowUtc);
+      console.log('[join-discipline] schedule creation result:', {
+        linkUserDisciplineId: newLink.id,
+        inserted: scheduleResult.inserted,
+        error: scheduleResult.error ?? null,
+      });
+    } else {
+      console.warn('[join-discipline] notification_plan assente, schedule non creata', {
+        disciplineId,
+        linkUserDisciplineId: newLink.id,
+      });
     }
 
     // Incrementa il contatore partecipanti

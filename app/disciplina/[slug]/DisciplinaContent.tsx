@@ -363,7 +363,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
 
           {/* Bollino Iscrizione + Pulsante Blocca */}
           {joined && (
-            <div className="flex items-center justify-between gap-4 mb-4">
+            <div className="flex flex-col items-start gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 border border-green-500 dark:border-green-600 rounded-full">
                 <div className="w-5 h-5 bg-green-500 dark:bg-green-600 rounded-full flex items-center justify-center shrink-0">
                   <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

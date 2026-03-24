@@ -23,6 +23,7 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
   const supabaseAdmin = createAdminClient();
   const whatsapp = getWhatsAppClient();
   const nowIso = nowUtc.toISOString();
+  console.log(`[sendScheduledMessages] start nowUtc=${nowIso}`);
 
   const { data: dueMessages, error: dueError } = await supabaseAdmin
     .from('message_schedule')
@@ -34,10 +35,12 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     .limit(500);
 
   if (dueError) {
+    console.error('[sendScheduledMessages] due query error:', dueError);
     throw new Error(`Query due messages failed: ${dueError.message}`);
   }
 
   const messages = (dueMessages ?? []) as ScheduledMessageRow[];
+  console.log(`[sendScheduledMessages] due messages found=${messages.length}`);
   if (messages.length === 0) {
     return {
       scanned: 0,
@@ -62,6 +65,7 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     .in('id', linkIds);
 
   if (linkError) {
+    console.error('[sendScheduledMessages] links query error:', linkError);
     throw new Error(`Query link_user_disciplines failed: ${linkError.message}`);
   }
 
@@ -82,6 +86,7 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     .in('id', userIds);
 
   if (profileError) {
+    console.error('[sendScheduledMessages] profiles query error:', profileError);
     throw new Error(`Query profiles failed: ${profileError.message}`);
   }
 
@@ -95,12 +100,16 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     const linkId = msg.link_user_discipline_id;
     const body = msg.metadata?.message?.trim();
     if (!linkId || !body) {
+      console.warn(`[sendScheduledMessages] skip message=${msg.id} reason=missing_link_or_body linkId=${String(linkId)} hasBody=${Boolean(body)}`);
       failed += 1;
       continue;
     }
 
     const link = linkById.get(linkId);
     if (!link || !link.user_id || link.stopped_at) {
+      console.warn(
+        `[sendScheduledMessages] skip message=${msg.id} reason=invalid_or_stopped_link linkId=${linkId} hasLink=${Boolean(link)} hasUser=${Boolean(link?.user_id)} stoppedAt=${link?.stopped_at ?? 'null'}`
+      );
       failed += 1;
       continue;
     }
@@ -108,21 +117,25 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     const profile = profileByUserId.get(link.user_id);
     const phone = profile?.phone?.trim();
     if (!phone) {
+      console.warn(`[sendScheduledMessages] skip message=${msg.id} reason=missing_phone userId=${link.user_id}`);
       failed += 1;
       continue;
     }
 
     try {
+      console.log(`[sendScheduledMessages] sending message=${msg.id} to=${phone} linkId=${linkId} sendTimeUtc=${msg.send_time_utc}`);
       await whatsapp.sendTextMessage(phone, body);
+      console.log(`[sendScheduledMessages] sent message=${msg.id}`);
       successfullySentIds.push(msg.id);
     } catch (err) {
       failed += 1;
-      console.error(`Failed sending message ${msg.id}:`, err);
+      console.error(`[sendScheduledMessages] failed message=${msg.id} to=${phone}`, err);
     }
   }
 
   let markedSent = 0;
   if (successfullySentIds.length > 0) {
+    console.log(`[sendScheduledMessages] marking is_sent=true count=${successfullySentIds.length}`);
     const { error: markError } = await supabaseAdmin
       .from('message_schedule')
       .update({ is_sent: true })
@@ -130,17 +143,21 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
       .eq('is_sent', false);
 
     if (markError) {
+      console.error('[sendScheduledMessages] mark sent error:', markError);
       throw new Error(`Mark is_sent failed: ${markError.message}`);
     }
 
     markedSent = successfullySentIds.length;
   }
 
-  return {
+  const result = {
     scanned: messages.length,
     sent: successfullySentIds.length,
     failed,
     markedSent,
     nowUtc: nowIso,
   };
+
+  console.log('[sendScheduledMessages] completed:', result);
+  return result;
 }

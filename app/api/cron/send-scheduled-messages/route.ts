@@ -12,11 +12,14 @@ export async function GET(request: NextRequest) {
   const expectedSecret = process.env.CRON_SECRET;
 
   if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
+    console.warn('[cron/send-scheduled-messages] unauthorized request');
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
+    console.log('[cron/send-scheduled-messages] trigger accepted');
     const result = await sendDueScheduledMessages(new Date());
+    console.log('[cron/send-scheduled-messages] result:', result);
     return NextResponse.json({
       ok: true,
       ...result,

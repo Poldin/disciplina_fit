@@ -25,7 +25,11 @@ export async function populateMessageSchedule(
   notificationPlan: NotificationPlan | null,
   nowUtc: Date = new Date()
 ): Promise<{ inserted: number; error?: string }> {
+  console.log(
+    `[populateMessageSchedule] start linkUserDisciplineId=${linkUserDisciplineId} nowUtc=${nowUtc.toISOString()}`
+  );
   if (!notificationPlan || typeof notificationPlan !== 'object') {
+    console.warn('[populateMessageSchedule] notificationPlan missing or invalid');
     return { inserted: 0 };
   }
 
@@ -39,6 +43,7 @@ export async function populateMessageSchedule(
     .sort((a, b) => a[0] - b[0]);
 
   if (entries.length === 0) {
+    console.warn('[populateMessageSchedule] no valid day_X entries found');
     return { inserted: 0 };
   }
 
@@ -58,7 +63,12 @@ export async function populateMessageSchedule(
 
     for (const msg of messages) {
       const sendTime = parseTimeToUtc(dayDate, msg.time);
-      if (!sendTime) continue;
+      if (!sendTime) {
+        console.warn(
+          `[populateMessageSchedule] skip invalid time day_${dayNum} time=${msg.time}`
+        );
+        continue;
+      }
 
       rows.push({
         send_time_utc: sendTime.toISOString(),
@@ -69,18 +79,24 @@ export async function populateMessageSchedule(
   }
 
   if (rows.length === 0) {
+    console.warn('[populateMessageSchedule] built 0 rows after parsing');
     return { inserted: 0 };
   }
+
+  console.log(
+    `[populateMessageSchedule] inserting rows=${rows.length} firstSend=${rows[0]?.send_time_utc} lastSend=${rows[rows.length - 1]?.send_time_utc}`
+  );
 
   const { error } = await supabase
     .from('message_schedule')
     .insert(rows);
 
   if (error) {
-    console.error('populateMessageSchedule error:', error);
+    console.error('[populateMessageSchedule] insert error:', error);
     return { inserted: 0, error: error.message };
   }
 
+  console.log(`[populateMessageSchedule] completed inserted=${rows.length}`);
   return { inserted: rows.length };
 }
 
