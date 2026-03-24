@@ -208,6 +208,22 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     return "Inizia ora!";
   };
 
+  const handleShare = async () => {
+    const url = typeof window !== "undefined" ? window.location.href : "";
+    const title = discipline.title || "disciplinaFit";
+    const text = discipline.short_desc || "Guarda questa challenge su disciplinaFit";
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title, text, url });
+      } else {
+        await navigator.clipboard?.writeText(url);
+        alert("Link copiato negli appunti!");
+      }
+    } catch {
+      // Utente ha annullato o errore: non mostrare nulla
+    }
+  };
+
   const ctaButtonClass = joined
     ? "bg-green-600 hover:bg-green-600 text-white cursor-default"
     : "bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900";
@@ -307,16 +323,27 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Back Link */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors mb-8"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Torna alle discipline
-        </Link>
+        {/* Back Link + Condividi */}
+        <div className="flex items-center justify-between gap-4 mb-8">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Torna alle discipline
+          </Link>
+          <button
+            onClick={handleShare}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-100 dark:bg-zinc-800 hover:bg-zinc-200 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-100 font-medium rounded-lg transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+            </svg>
+            Condividi
+          </button>
+        </div>
 
         {/* Hero Section */}
         <div className="mb-8">
