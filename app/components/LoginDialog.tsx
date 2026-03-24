@@ -63,7 +63,8 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
         },
         body: JSON.stringify({ 
           phone: phoneNumber,
-          otp: otp 
+          otp: otp,
+          fullName,
         }),
       });
 
@@ -162,7 +163,7 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
             id="fullName"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder="Mario Rossi"
+            placeholder="Jennifer"
             required
             className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
           />

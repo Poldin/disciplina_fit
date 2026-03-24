@@ -42,6 +42,7 @@ CREATE TABLE public.profiles (
   phone text NOT NULL UNIQUE,
   created_at timestamp with time zone DEFAULT now(),
   metadata jsonb,
+  user_name text,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );

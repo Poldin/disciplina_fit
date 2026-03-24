@@ -28,7 +28,7 @@ function getDeterministicPassword(phone: string): string {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { phone, otp } = body;
+    const { phone, otp, fullName } = body;
 
     // Validazione input
     if (!phone || !otp) {
@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
         .insert({
           id: authData.user.id,
           phone: normalizedPhone,
+          ...(fullName?.trim() && { user_name: fullName.trim() }),
         });
 
       if (profileError) {
@@ -120,6 +121,13 @@ export async function POST(request: NextRequest) {
         email_confirm: true,
         password,
       });
+      // Aggiorna il nome se fornito
+      if (fullName?.trim()) {
+        await supabaseAdmin
+          .from('profiles')
+          .update({ user_name: fullName.trim() })
+          .eq('id', existingProfile.id);
+      }
     }
 
     // Login con email interna (non richiede provider Phone attivo)
