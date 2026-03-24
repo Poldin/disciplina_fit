@@ -15,7 +15,6 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [debugOtp, setDebugOtp] = useState<string | null>(null);
-  const [fullName, setFullName] = useState("");
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +27,7 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ phone: phoneNumber, fullName }),
+        body: JSON.stringify({ phone: phoneNumber }),
       });
 
       const data = await response.json();
@@ -64,7 +63,6 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
         body: JSON.stringify({ 
           phone: phoneNumber,
           otp: otp,
-          fullName,
         }),
       });
 
@@ -98,7 +96,6 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
     setError(null);
     setSuccessMessage(null);
     setDebugOtp(null);
-    setFullName("");
     onClose();
   };
 
@@ -131,7 +128,7 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
           </h2>
           <p className="text-zinc-600 dark:text-zinc-400">
             {step === "phone" 
-              ? "Inserisci un nome e il tuo numero di telefono per continuare"
+              ? "Inserisci il tuo numero di telefono per ricevere il codice OTP via WhatsApp"
               : `Abbiamo inviato un codice via WhatsApp al ${phoneNumber}`
             }
           </p>
@@ -150,24 +147,6 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
             {successMessage}
           </div>
         )}
-
-        <div className="mb-2">
-          <label 
-            htmlFor="fullName" 
-            className="block text-sm font-medium text-zinc-900 dark:text-zinc-50 mb-2"
-          >
-            Il tuo nome
-          </label>
-          <input
-            type="text"
-            id="fullName"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            placeholder="Jennifer"
-            required
-            className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
-          />
-        </div>
 
         {/* Phone Step */}
         {step === "phone" && (

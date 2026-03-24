@@ -21,8 +21,11 @@ type AuthContextType = {
   subscription: SubscriptionStatus;
   /** Dettagli abbonamento per messaggi UI (cancellazione richiesta, data X) */
   subscriptionInfo: SubscriptionInfo | null;
+  /** Nome utente dal profilo (null se non valorizzato) */
+  userName: string | null;
   signOut: () => Promise<void>;
   refreshSubscription: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -30,8 +33,10 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   subscription: "loading",
   subscriptionInfo: null,
+  userName: null,
   signOut: async () => {},
   refreshSubscription: async () => {},
+  refreshProfile: async () => {},
 });
 
 const ACCESS_STATUSES: SubscriptionStatus[] = ["active", "past_due", "trialing"];
@@ -56,7 +61,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [subscription, setSubscription] = useState<SubscriptionStatus>("loading");
   const [subscriptionInfo, setSubscriptionInfo] = useState<SubscriptionInfo | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const supabase = createClient();
+
+  const fetchProfile = useCallback(async (userId: string) => {
+    try {
+      const { data } = await supabase
+        .from("profiles")
+        .select("user_name")
+        .eq("id", userId)
+        .single();
+      const name = data?.user_name?.trim() || null;
+      setUserName(name);
+    } catch {
+      setUserName(null);
+    }
+  }, [supabase]);
 
   const fetchSubscription = useCallback(async (userId: string) => {
     try {
@@ -84,15 +104,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user, fetchSubscription]);
 
+  const refreshProfile = useCallback(async () => {
+    if (user) {
+      await fetchProfile(user.id);
+    }
+  }, [user, fetchProfile]);
+
   useEffect(() => {
     // Recupera sessione iniziale
     supabase.auth.getUser().then(({ data: { user } }) => {
       setUser(user);
       if (user) {
         fetchSubscription(user.id);
+        fetchProfile(user.id);
       } else {
         setSubscription("none");
         setSubscriptionInfo(buildSubscriptionInfo(null));
+        setUserName(null);
       }
       setLoading(false);
     });
@@ -105,25 +133,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(newUser);
       if (newUser) {
         fetchSubscription(newUser.id);
+        fetchProfile(newUser.id);
       } else {
         setSubscription("none");
         setSubscriptionInfo(buildSubscriptionInfo(null));
+        setUserName(null);
       }
       setLoading(false);
     });
 
     return () => authSub.unsubscribe();
-  }, [supabase, fetchSubscription]);
+  }, [supabase, fetchSubscription, fetchProfile]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setSubscription("none");
     setSubscriptionInfo(buildSubscriptionInfo(null));
+    setUserName(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, subscription, subscriptionInfo, signOut, refreshSubscription }}>
+    <AuthContext.Provider value={{ user, loading, subscription, subscriptionInfo, userName, signOut, refreshSubscription, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
