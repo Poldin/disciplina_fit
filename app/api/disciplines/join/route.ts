@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
 import { createAdminClient } from '@/app/utils/supabase/admin';
+import { populateMessageSchedule } from '@/app/utils/messageSchedule';
+import type { NotificationPlan } from '@/app/utils/messageSchedule';
 
 export async function POST(request: NextRequest) {
   try {
@@ -100,15 +102,24 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Recupera notification_plan e subscribers per disciplina
+    const { data: disciplineData } = await supabaseAdmin
+      .from('disciplines')
+      .select('subscribers, notification_plan')
+      .eq('id', disciplineId)
+      .single();
+
     // Crea un nuovo record (anche se esistono record bloccati precedenti)
-    const { error: joinError } = await supabaseAdmin
+    const { data: newLink, error: joinError } = await supabaseAdmin
       .from('link_user_disciplines')
       .insert({
         user_id: user.id,
         discipline_id: disciplineId,
-      });
+      })
+      .select('id')
+      .single();
 
-    if (joinError) {
+    if (joinError || !newLink) {
       console.error('Join error:', joinError);
       return NextResponse.json(
         { error: "Errore nell'iscrizione alla disciplina" },
@@ -116,12 +127,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Popola message_schedule con i messaggi del notification_plan (partendo da domani UTC)
+    const plan = disciplineData?.notification_plan as NotificationPlan | null;
+    if (plan) {
+      const nowUtc = new Date();
+      await populateMessageSchedule(supabaseAdmin, newLink.id, plan, nowUtc);
+    }
+
     // Incrementa il contatore partecipanti
-    const { data: discipline } = await supabaseAdmin
-      .from('disciplines')
-      .select('subscribers')
-      .eq('id', disciplineId)
-      .single();
+    const discipline = disciplineData;
 
     if (discipline) {
       await supabaseAdmin
