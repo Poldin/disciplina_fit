@@ -10,6 +10,8 @@ interface HeaderProps {
 export default function Header({ onLoginClick }: HeaderProps) {
   const { user, loading, userName, signOut } = useAuth();
 
+  const userInfo = [user?.user_metadata?.phone || user?.phone, userName].filter(Boolean).join(" • ");
+
   return (
     <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -25,8 +27,8 @@ export default function Header({ onLoginClick }: HeaderProps) {
           {!loading && (
             user ? (
               <div className="flex items-center gap-4">
-                <span className="text-sm text-zinc-600 dark:text-zinc-400">
-                  {[user.user_metadata?.phone || user.phone, userName].filter(Boolean).join(" • ")}
+                <span className="hidden sm:inline text-sm text-zinc-600 dark:text-zinc-400">
+                  {userInfo}
                 </span>
                 <button 
                   onClick={signOut}

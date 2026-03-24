@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import Header from "@/app/components/Header";
+import UserInfoBanner from "@/app/components/UserInfoBanner";
 import LoginDialog from "@/app/components/LoginDialog";
 import SubscriptionDialog from "@/app/components/SubscriptionDialog";
 import Footer from "@/app/components/Footer";
@@ -232,6 +233,9 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
       {/* Header */}
       <Header onLoginClick={() => setIsLoginOpen(true)} />
+
+      {/* Numero e nome su mobile (componente separato) */}
+      <UserInfoBanner />
 
       {user && (
   <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
