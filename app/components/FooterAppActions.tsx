@@ -164,7 +164,7 @@ export default function FooterAppActions({
 
   if (!mounted) {
     return (
-      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 sm:p-5 bg-zinc-50/80 dark:bg-zinc-800/40 mb-8 animate-pulse min-h-[5.5rem]" />
+      <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 sm:p-5 bg-zinc-50/80 dark:bg-zinc-800/40 mb-8 animate-pulse min-h-5.5rem" />
     );
   }
 
