@@ -7,6 +7,10 @@ const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID;
  * OneSignal Web SDK (Custom Code). Set NEXT_PUBLIC_ONESIGNAL_APP_ID in .env.local.
  * Optional: NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID for Safari / iOS web push.
  */
+const welcomeTitle = "disciplinaFit";
+const welcomeMessage =
+  "🫶SUPER! Le notifiche adesso sono attive. Le useremo per ricordarti di non mollare nelle discipline che scegli e per aiutarti con qualche info utile. 🔥";
+
 export default function OneSignalInit() {
   if (!appId) return null;
 
@@ -15,6 +19,7 @@ export default function OneSignalInit() {
     ...(safariWebId ? [`safari_web_id: ${JSON.stringify(safariWebId)}`] : []),
     `notifyButton: { enable: false }`,
     `promptOptions: { slidedown: { prompts: [{ type: "push", autoPrompt: false }] } }`,
+    `welcomeNotification: { title: ${JSON.stringify(welcomeTitle)}, message: ${JSON.stringify(welcomeMessage)} }`,
   ];
 
   const initScript = `
