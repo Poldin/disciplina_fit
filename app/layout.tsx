@@ -21,6 +21,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "disciplinaFit",
   description: "La piattaforma per trasformare i tuoi obiettivi fitness in abitudini quotidiane.",
+  appleWebApp: {
+    capable: true,
+    title: "disciplinaFit",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({
