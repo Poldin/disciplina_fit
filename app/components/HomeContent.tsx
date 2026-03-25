@@ -261,7 +261,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
             Prenditi cura di te, con disciplina.
           </h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-2">
-            Prenderti cura di te, del tuo equilibrio fisico, richiede scelte da perseguire nel tempo con disciplina. Non è uno sprint: è una maratona.
+            Prendersi cura di se, del proprio equilibrio fisico, richiede scelte da perseguire nel tempo con disciplina. Di solito non si tratta di uno sprint ma di una maratona.
           </p>
           <p className="text-lg text-zinc-600 dark:text-zinc-400">
             Scegli la disciplina che risuona in te e trasforma i tuoi obiettivi in abitudini quotidiane. Non mollare!
@@ -445,7 +445,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 // L'utente può semplicemente scegliere le discipline dalla pagina
               }}
               disabled={isLoadingPortal && !!user && !subscriptionInfo?.hasAccess}
-              className="px-8 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full sm:w-auto px-8 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoadingPortal && !!user && !subscriptionInfo?.hasAccess 
                 ? "Caricamento..." 
