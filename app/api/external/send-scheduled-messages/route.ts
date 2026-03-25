@@ -13,7 +13,12 @@ export async function POST(request: NextRequest) {
   const expectedSecret = process.env.SCHEDULE_TRIGGER_SECRET;
 
   if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
-    console.warn('[external/send-scheduled-messages] unauthorized request');
+    console.warn('[external/send-scheduled-messages] unauthorized request', {
+      hasExpectedSecret: Boolean(expectedSecret),
+      authHeaderPresent: Boolean(authHeader),
+      authHeaderPrefix: authHeader ? authHeader.slice(0, 7) : null, // e.g. "Bearer "
+      authHeaderLen: authHeader ? authHeader.length : 0,
+    });
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
