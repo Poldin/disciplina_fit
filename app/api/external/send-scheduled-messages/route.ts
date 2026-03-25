@@ -3,7 +3,7 @@ import { sendDueScheduledMessages } from '@/app/utils/sendScheduledMessages';
 
 /**
  * Endpoint server triggerabile dall'esterno:
- * invia i messaggi in message_schedule non ancora inviati
+ * invia notifiche push (OneSignal) per le righe message_schedule non ancora inviate
  * con send_time_utc <= now (UTC), poi marca is_sent=true sui successi.
  *
  * Protezione: Authorization: Bearer <SCHEDULE_TRIGGER_SECRET>

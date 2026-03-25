@@ -1,5 +1,5 @@
 import { createAdminClient } from '@/app/utils/supabase/admin';
-import { getWhatsAppClient } from '@/app/utils/whatsapp';
+import { sendPushToExternalUser } from '@/app/utils/onesignalPush';
 
 type ScheduledMessageRow = {
   id: string;
@@ -14,14 +14,8 @@ type LinkRow = {
   stopped_at: string | null;
 };
 
-type ProfileRow = {
-  id: string;
-  phone: string | null;
-};
-
 export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
   const supabaseAdmin = createAdminClient();
-  const whatsapp = getWhatsAppClient();
   const nowIso = nowUtc.toISOString();
   console.log(`[sendScheduledMessages] start nowUtc=${nowIso}`);
 
@@ -72,27 +66,6 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
   const links = (linkRows ?? []) as LinkRow[];
   const linkById = new Map<number, LinkRow>(links.map((l) => [l.id, l]));
 
-  const userIds = Array.from(
-    new Set(
-      links
-        .map((l) => l.user_id)
-        .filter((id): id is string => typeof id === 'string' && id.length > 0)
-    )
-  );
-
-  const { data: profileRows, error: profileError } = await supabaseAdmin
-    .from('profiles')
-    .select('id, phone')
-    .in('id', userIds);
-
-  if (profileError) {
-    console.error('[sendScheduledMessages] profiles query error:', profileError);
-    throw new Error(`Query profiles failed: ${profileError.message}`);
-  }
-
-  const profiles = (profileRows ?? []) as ProfileRow[];
-  const profileByUserId = new Map<string, ProfileRow>(profiles.map((p) => [p.id, p]));
-
   const successfullySentIds: string[] = [];
   let failed = 0;
 
@@ -114,22 +87,23 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
       continue;
     }
 
-    const profile = profileByUserId.get(link.user_id);
-    const phone = profile?.phone?.trim();
-    if (!phone) {
-      console.warn(`[sendScheduledMessages] skip message=${msg.id} reason=missing_phone userId=${link.user_id}`);
-      failed += 1;
-      continue;
-    }
+    const userId = link.user_id;
 
     try {
-      console.log(`[sendScheduledMessages] sending message=${msg.id} to=${phone} linkId=${linkId} sendTimeUtc=${msg.send_time_utc}`);
-      await whatsapp.sendTextMessage(phone, body);
-      console.log(`[sendScheduledMessages] sent message=${msg.id}`);
+      console.log(
+        `[sendScheduledMessages] push message=${msg.id} userId=${userId} linkId=${linkId} sendTimeUtc=${msg.send_time_utc}`
+      );
+      const result = await sendPushToExternalUser(userId, body);
+      if (!result.ok) {
+        failed += 1;
+        console.warn(`[sendScheduledMessages] push failed message=${msg.id} userId=${userId}: ${result.reason}`);
+        continue;
+      }
+      console.log(`[sendScheduledMessages] sent message=${msg.id} onesignalId=${result.messageId}`);
       successfullySentIds.push(msg.id);
     } catch (err) {
       failed += 1;
-      console.error(`[sendScheduledMessages] failed message=${msg.id} to=${phone}`, err);
+      console.error(`[sendScheduledMessages] failed message=${msg.id} userId=${userId}`, err);
     }
   }
 

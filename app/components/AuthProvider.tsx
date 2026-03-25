@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { createClient } from "@/app/utils/supabase/client";
+import { syncOneSignalAuthUser } from "@/app/utils/onesignalAuthSync";
 import type { User } from "@supabase/supabase-js";
 
 export type SubscriptionStatus = "active" | "canceled" | "past_due" | "trialing" | "incomplete" | "none" | "loading";
@@ -144,6 +145,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => authSub.unsubscribe();
   }, [supabase, fetchSubscription, fetchProfile]);
+
+  useEffect(() => {
+    syncOneSignalAuthUser(user?.id ?? null);
+  }, [user?.id]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
