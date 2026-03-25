@@ -13,7 +13,8 @@ export default function OneSignalInit() {
   const initLines = [
     `appId: ${JSON.stringify(appId)}`,
     ...(safariWebId ? [`safari_web_id: ${JSON.stringify(safariWebId)}`] : []),
-    `notifyButton: { enable: true }`,
+    `notifyButton: { enable: false }`,
+    `promptOptions: { slidedown: { prompts: [{ type: "push", autoPrompt: false }] } }`,
   ];
 
   const initScript = `
