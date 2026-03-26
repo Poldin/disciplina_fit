@@ -19,7 +19,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [joinedDisciplineIds, setJoinedDisciplineIds] = useState<Set<string>>(new Set());
   const [activeDiscipline, setActiveDiscipline] = useState<Discipline | null>(null);
-  const { user, subscription, subscriptionInfo, refreshSubscription } = useAuth();
+  const { user, subscriptionInfo, refreshSubscription } = useAuth();
 
   // Pulisce l'URL dopo il ritorno da Stripe Checkout
   useEffect(() => {
@@ -63,31 +63,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
     fetchActiveDiscipline();
   }, [user]);
 
-  // Gestisce il click su "Gestisci abbonamento"
-  const handleManageSubscription = async () => {
-    setIsLoadingPortal(true);
-    try {
-      const response = await fetch("/api/stripe/create-portal-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "Errore nella creazione della sessione");
-      }
-
-      // Redirect al portale Stripe
-      window.location.href = data.url;
-    } catch (error) {
-      console.error("Portal error:", error);
-      alert("Errore nel caricamento del portale di gestione. Riprova.");
-      setIsLoadingPortal(false);
-    }
-  };
-
-  // Gestisce il click su "Abbonati" - va direttamente a Stripe Checkout
+  // Gestisce il click su "Abbonati" dalla home (checkout Stripe)
   const handleSubscribe = async () => {
     setIsLoadingPortal(true);
     try {
@@ -116,97 +92,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       {/* Header */}
       <Header onLoginClick={() => setIsLoginOpen(true)} />
 
-      {/* Numero e nome su mobile (componente separato) */}
       <UserInfoBanner />
-
-      {/* User Status Banner - Solo se loggato */}
-      {user && (
-        <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex items-center gap-3">
-                {subscriptionInfo?.hasAccess ? (
-                  <>
-                    <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center shrink-0">
-                      <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                        Abbonamento attivo
-                      </p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                        {subscriptionInfo.closingDate
-                          ? `Abbonamento disattivato, valido fino al ${new Date(subscriptionInfo.closingDate).toLocaleDateString("it-IT", { day: "numeric", month: "long", year: "numeric" })}`
-                          : "Hai accesso illimitato a tutte le discipline"}
-                      </p>
-                    </div>
-                  </>
-                ) : subscription === "incomplete" ? (
-                  <>
-                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center shrink-0">
-                      <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                        Abbonamento da attivare
-                      </p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Completa il pagamento per attivare l&apos;accesso
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center shrink-0">
-                      <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                        Nessun abbonamento attivo
-                      </p>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                        Abbonati per accedere a tutte le discipline
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {subscriptionInfo?.hasAccess ? (
-                <button
-                  onClick={handleManageSubscription}
-                  disabled={isLoadingPortal}
-                  className="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoadingPortal ? "Caricamento..." : "Gestisci abbonamento"}
-                </button>
-              ) : subscription === "incomplete" ? (
-                <button
-                  onClick={handleManageSubscription}
-                  disabled={isLoadingPortal}
-                  className="px-4 py-2 text-sm bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoadingPortal ? "Caricamento..." : "Completa il pagamento"}
-                </button>
-              ) : (
-                <button
-                  onClick={handleSubscribe}
-                  disabled={isLoadingPortal}
-                  className="px-4 py-2 text-sm bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isLoadingPortal ? "Caricamento..." : "Abbonati a €4,99/mese"}
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Disciplina attiva */}
       {user && subscriptionInfo?.hasAccess && activeDiscipline && (

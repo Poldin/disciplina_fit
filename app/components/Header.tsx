@@ -8,9 +8,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onLoginClick }: HeaderProps) {
-  const { user, loading, userName, signOut } = useAuth();
-
-  const userInfo = [user?.user_metadata?.phone || user?.phone, userName].filter(Boolean).join(" • ");
+  const { user, loading } = useAuth();
 
   return (
     <header className="border-b border-zinc-200 dark:border-zinc-800 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-sm sticky top-0 z-10">
@@ -26,17 +24,12 @@ export default function Header({ onLoginClick }: HeaderProps) {
           {/* Auth Button */}
           {!loading && (
             user ? (
-              <div className="flex items-center gap-4">
-                <span className="hidden sm:inline text-sm text-zinc-600 dark:text-zinc-400">
-                  {userInfo}
-                </span>
-                <button 
-                  onClick={signOut}
-                  className="px-6 py-1 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors duration-200"
-                >
-                  esci
-                </button>
-              </div>
+              <Link
+                href="/profile"
+                className="px-6 py-1 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors duration-200"
+              >
+                profilo
+              </Link>
             ) : (
               <button 
                 onClick={onLoginClick}
