@@ -4,10 +4,13 @@ import { createAdminClient } from '@/app/utils/supabase/admin';
 import Stripe from 'stripe';
 
 /**
- * Estrae la data di fine periodo corrente da una subscription Stripe.
+ * Restituisce la data di fine periodo solo se l'abbonamento ha la cancellazione
+ * schedulata a fine periodo (cancel_at_period_end = true). In tutti gli altri casi
+ * restituisce null, così la UI non mostra erroneamente "valido fino al...".
  * In Stripe SDK v20+, current_period_end è su SubscriptionItem, non su Subscription.
  */
-function getSubscriptionPeriodEnd(subscription: Stripe.Subscription): string | null {
+function getClosingDate(subscription: Stripe.Subscription): string | null {
+  if (!subscription.cancel_at_period_end) return null;
   const item = subscription.items?.data?.[0];
   if (item?.current_period_end) {
     return new Date(item.current_period_end * 1000).toISOString();
@@ -48,7 +51,7 @@ export async function POST(request: NextRequest) {
 
         if (userId && subscriptionId) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-          const closingDate = getSubscriptionPeriodEnd(subscription);
+          const closingDate = getClosingDate(subscription);
 
           // Verifica se esiste già un record subscription per questo utente
           const { data: existingSub } = await supabaseAdmin
@@ -87,7 +90,7 @@ export async function POST(request: NextRequest) {
       // Subscription aggiornata (rinnovo, cambio piano, cancellazione richiesta, ecc.)
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        const closingDate = getSubscriptionPeriodEnd(subscription);
+        const closingDate = getClosingDate(subscription);
 
         await supabaseAdmin
           .from('subscriptions')
@@ -102,7 +105,7 @@ export async function POST(request: NextRequest) {
       // Subscription cancellata (fine periodo o cancellazione immediata)
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
-        const closingDate = getSubscriptionPeriodEnd(subscription);
+        const closingDate = getClosingDate(subscription);
 
         await supabaseAdmin
           .from('subscriptions')
