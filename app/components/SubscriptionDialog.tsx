@@ -71,7 +71,7 @@ export default function SubscriptionDialog({ isOpen, onClose, disciplineSlug }: 
             Attiva l'abbonamento
           </h2>
           <p className="text-zinc-600 dark:text-zinc-400">
-            Per iscriverti alle discipline hai bisogno di un abbonamento attivo. Accesso illimitato a tutte le challenge!
+            Per iscriverti alle discipline hai bisogno di un abbonamento attivo. Accesso illimitato a tutte le discipline!
           </p>
         </div>
 

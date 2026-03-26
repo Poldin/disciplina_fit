@@ -40,7 +40,7 @@ CREATE TABLE public.message_schedule (
   CONSTRAINT message_schedule_pkey PRIMARY KEY (id),
   CONSTRAINT message_schedule_link_user_discipline_id_fkey FOREIGN KEY (link_user_discipline_id) REFERENCES public.link_user_disciplines(id)
 );
--- message_schedule: day_number = giorno challenge (1 = day_1 nel notification_plan). metadata tipico: { "message": "..." }.
+
 CREATE TABLE public.otp_verifications (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   phone text NOT NULL,

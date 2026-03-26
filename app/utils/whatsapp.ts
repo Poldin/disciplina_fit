@@ -69,7 +69,7 @@ export class WhatsAppClient {
    * Invia messaggio di benvenuto a nuovo utente
    */
   async sendWelcomeMessage(phoneNumber: string): Promise<WhatsAppMessageResponse> {
-    const message = `🎉 *Benvenuto in disciplinaFit!*\n\nSei pronto a prenderti cura di te, con disciplina?\n\nInizia subito la tua prima challenge!`;
+    const message = `🎉 *Benvenuto in disciplinaFit!*\n\nSei pronto a prenderti cura di te, con disciplina?\n\nInizia subito la tua prima disciplina!`;
     
     return this.sendTextMessage(phoneNumber, message);
   }

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import Header from "./Header";
 import LoginDialog from "./LoginDialog";
 import Footer from "./Footer";
 import { useAuth } from "./AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
+import { listNotificationPlanDayPreviews } from "@/app/utils/notificationPlanDisplay";
 import type { Discipline } from "@/app/utils/types";
 
 interface HomeContentProps {
@@ -18,7 +19,29 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [joinedDisciplineIds, setJoinedDisciplineIds] = useState<Set<string>>(new Set());
   const [activeDiscipline, setActiveDiscipline] = useState<Discipline | null>(null);
+  const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
+
+  const activeProgress = useMemo(() => {
+    if (!activeDiscipline) return null;
+    const planDays = listNotificationPlanDayPreviews(activeDiscipline.notification_plan);
+    const sent = new Set(sentDayNumbers);
+    const segmentDayNumbers: number[] =
+      planDays.length > 0
+        ? planDays.map((d) => d.dayNumber)
+        : activeDiscipline.lenght_days && activeDiscipline.lenght_days > 0
+          ? Array.from({ length: activeDiscipline.lenght_days }, (_, i) => i + 1)
+          : [];
+
+    if (segmentDayNumbers.length === 0) return null;
+
+    const completed = segmentDayNumbers.filter((d) => sent.has(d)).length;
+    const total = segmentDayNumbers.length;
+    const remaining = Math.max(0, total - completed);
+    const pct = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
+
+    return { completed, total, remaining, pct, segmentDayNumbers, sent };
+  }, [activeDiscipline, sentDayNumbers]);
 
   // Pulisce l'URL dopo il ritorno da Stripe Checkout
   useEffect(() => {
@@ -42,7 +65,9 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       const supabase = createClient();
       const { data } = await supabase
         .from("link_user_disciplines")
-        .select("discipline_id, disciplines(id, title, slug, img_url, short_desc, lenght_days)")
+        .select(
+          "discipline_id, disciplines(id, title, slug, img_url, short_desc, lenght_days, notification_plan)"
+        )
         .eq("user_id", user.id)
         .is("stopped_at", null) // Solo percorsi attivi (non bloccati)
         .limit(1)
@@ -61,6 +86,27 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
 
     fetchActiveDiscipline();
   }, [user]);
+
+  useEffect(() => {
+    if (!user || !activeDiscipline) {
+      setSentDayNumbers([]);
+      return;
+    }
+    let cancelled = false;
+    void fetch(
+      `/api/disciplines/sent-days?disciplineId=${encodeURIComponent(activeDiscipline.id)}`
+    )
+      .then((res) => res.json())
+      .then((data: { sentDayNumbers?: number[] }) => {
+        if (!cancelled) setSentDayNumbers(data.sentDayNumbers ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setSentDayNumbers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, activeDiscipline?.id]);
 
   // Gestisce il click su "Abbonati" dalla home (checkout Stripe)
   const handleSubscribe = async () => {
@@ -96,41 +142,114 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
         <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
-              La tua challenge in corso
+              in corso
             </p>
             <Link
               href={`/disciplina/${activeDiscipline.slug}`}
-              className="flex items-center gap-4 group"
+              className="group block rounded-xl -mx-1 px-1 py-1 transition-colors hover:bg-zinc-50/80 dark:hover:bg-zinc-800/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-900"
             >
-              {activeDiscipline.img_url ? (
-                <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700">
-                  <img
-                    src={activeDiscipline.img_url}
-                    alt={activeDiscipline.title || "Disciplina"}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              ) : (
-                <div className="w-14 h-14 rounded-xl bg-linear-to-br from-zinc-200 to-zinc-300 dark:from-zinc-800 dark:to-zinc-900 shrink-0"></div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:underline truncate">
-                  {activeDiscipline.title}
-                </p>
-                {activeDiscipline.lenght_days && (
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {activeDiscipline.lenght_days} giorni
-                  </p>
+              <div className="flex items-center gap-4">
+                {activeDiscipline.img_url ? (
+                  <div className="w-14 h-14 rounded-xl overflow-hidden shrink-0 border border-zinc-200 dark:border-zinc-700">
+                    <img
+                      src={activeDiscipline.img_url}
+                      alt={activeDiscipline.title || "Disciplina"}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-14 h-14 rounded-xl bg-linear-to-br from-zinc-200 to-zinc-300 dark:from-zinc-800 dark:to-zinc-900 shrink-0"></div>
                 )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 group-hover:underline truncate">
+                    {activeDiscipline.title}
+                  </p>
+                  {activeProgress ? (
+                    <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
+                      <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                        {activeProgress.completed}
+                      </span>
+                      {" di "}
+                      <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                        {activeProgress.total}
+                      </span>
+                      {" giorni sbloccati"}
+                      {activeProgress.remaining > 0 ? (
+                        <>
+                          {" · "}
+                          <span className="text-zinc-500 dark:text-zinc-500">
+                            ne mancano {activeProgress.remaining}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                          {" · "}
+                          percorso completato
+                        </span>
+                      )}
+                    </p>
+                  ) : activeDiscipline.lenght_days ? (
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      {activeDiscipline.lenght_days} giorni
+                    </p>
+                  ) : null}
+                </div>
+                <div className="shrink-0 flex items-center gap-2">
+                  <span className="hidden sm:inline-block px-3 py-1 text-xs font-medium rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-600/40">
+                    In corso
+                  </span>
+                  <svg
+                    className="w-5 h-5 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-50 transition-colors"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </div>
-              <div className="shrink-0 flex items-center gap-2">
-                <span className="hidden sm:inline-block px-3 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-500/30 dark:border-green-600/30">
-                  In corso
-                </span>
-                <svg className="w-5 h-5 text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-50 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
+
+              {activeProgress && (
+                <div className="mt-4 pl-0 sm:pl-18 space-y-2">
+                  <div
+                    className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={activeProgress.pct}
+                    aria-label={`Percorso: ${activeProgress.pct} percento`}
+                  >
+                    <div
+                      className="h-full rounded-full bg-emerald-500 dark:bg-emerald-500 transition-[width] duration-300 ease-out"
+                      style={{ width: `${activeProgress.pct}%` }}
+                    />
+                  </div>
+                  {activeProgress.segmentDayNumbers.length > 0 &&
+                    activeProgress.segmentDayNumbers.length <= 36 && (
+                      <div
+                        className="flex gap-0.5"
+                        role="presentation"
+                        aria-hidden
+                      >
+                        {activeProgress.segmentDayNumbers.map((dayNum) => {
+                          const open = activeProgress.sent.has(dayNum);
+                          return (
+                            <div
+                              key={dayNum}
+                              title={`Giorno ${dayNum}${open ? " · sbloccato" : ""}`}
+                              className={`min-w-0 flex-1 h-1.5 rounded-sm ${
+                                open
+                                  ? "bg-emerald-500 dark:bg-emerald-500"
+                                  : "bg-zinc-200 dark:bg-zinc-700"
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
+                </div>
+              )}
             </Link>
           </div>
         </div>
@@ -144,14 +263,14 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
             Prenditi cura di te, con disciplina.
           </h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-2">
-            Prendersi cura di se, del proprio equilibrio fisico, richiede scelte da perseguire nel tempo con disciplina. Di solito non si tratta di uno sprint ma di una maratona.
+            Prendersi cura di sé, del proprio equilibrio fisico, richiede scelte da perseguire nel tempo con disciplina.
           </p>
           <p className="text-lg text-zinc-600 dark:text-zinc-400">
             Scegli la disciplina che risuona in te e trasforma i tuoi obiettivi in abitudini quotidiane. Non mollare!
           </p>
         </div>
 
-        {/* Challenge Cards Grid */}
+        {/* Discipline Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {disciplines.map((discipline) => (
             <Link
@@ -263,7 +382,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 1. Scegli una disciplina
               </h3>
               <p className="text-zinc-600 dark:text-zinc-400">
-                Esplora le nostre challenge e scegli quella che risuona con i tuoi obiettivi. Accesso illimitato a tutte le discipline.
+                Esplora le nostre discipline e scegli quella che risuona con i tuoi obiettivi. Accesso illimitato a tutte le discipline.
               </p>
             </div>
 
@@ -305,10 +424,10 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
               <span className="text-xl text-zinc-600 dark:text-zinc-400">/mese</span>
             </div>
             <p className="text-zinc-600 dark:text-zinc-400 mb-4">
-              Accesso illimitato a tutte le challenge • Messaggi di disciplina WhatsApp quotidiani • Cancella quando vuoi
+              Accesso illimitato a tutte le discipline • Notifiche e informazioni di supporto quotidiani • Cancella quando vuoi
             </p>
             <p className="text-sm text-zinc-500 dark:text-zinc-500 mb-6 max-w-sm mx-auto leading-relaxed">
-              Perchè devo pagare un abbonamento? Perchè chi investe, non molla (e per coprire i costi del servizio)
+              Perchè devo pagare un abbonamento? Perchè chi investe, arriva fino in fondo.
             </p>
             <button 
               onClick={() => {

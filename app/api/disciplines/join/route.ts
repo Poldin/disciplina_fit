@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Blocca tutte le discipline attive dell'utente (una alla volta)
-    // Se replaceActive è true, l'utente ha confermato di voler sostituire la challenge attiva
+    // Se replaceActive è true, l'utente ha confermato di voler sostituire la disciplina attiva
     const { data: activeDisciplines } = await supabaseAdmin
       .from('link_user_disciplines')
       .select('id, discipline_id')

@@ -35,7 +35,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [joined, setJoined] = useState(false);
   const [activeDiscipline, setActiveDiscipline] = useState<ActiveDisciplineInfo | null>(null);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
-  /** Challenge attiva: descrizione lunga in fisarmonica (chiusa di default) */
+  /** Disciplina attiva: descrizione lunga in fisarmonica (chiusa di default) */
   const [longDescOpen, setLongDescOpen] = useState(false);
 
   useEffect(() => {
@@ -191,7 +191,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const handleShare = async () => {
     const url = typeof window !== "undefined" ? window.location.href : "";
     const title = discipline.title || "disciplinaFit";
-    const text = discipline.short_desc || "Guarda questa challenge su disciplinaFit";
+    const text = discipline.short_desc || "Guarda questa disciplina su disciplinaFit";
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({ title, text, url });
@@ -331,7 +331,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
           )}
         </div>
 
-        {/* Description with Markdown — fisarmonica se la challenge è attiva */}
+        {/* Description with Markdown — fisarmonica se la disciplina è attiva */}
         {discipline.long_desc && (
           <div className="prose prose-zinc dark:prose-invert max-w-none">
             <div
@@ -435,7 +435,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               Vuoi davvero mollare?
             </h3>
             <p className="text-zinc-700 dark:text-zinc-300 mb-6 text-sm leading-relaxed">
-              Vuoi davvero mollare e procedere al blocco della challenge?
+              Vuoi davvero mollare e procedere al blocco della disciplina?
             </p>
             <div className="flex gap-3">
               <button
@@ -494,7 +494,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-800">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
-              Hai già una challenge attiva
+              Hai già una disciplina attiva
             </h3>
 
             {/* Card della disciplina attiva */}
@@ -519,10 +519,10 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             </div>
 
             <p className="text-zinc-700 dark:text-zinc-300 mb-2 text-sm leading-relaxed">
-              Stai già seguendo una challenge. Focalizzati su una alla volta per ottenere risultati veri.
+              Stai già seguendo una disciplina. Focalizzati su una alla volta per ottenere risultati veri.
             </p>
             <p className="text-zinc-600 dark:text-zinc-400 mb-6 text-xs leading-relaxed">
-              Se vuoi puoi procedere con la nuova challenge: bloccheremo quella attuale in automatico.
+              Se vuoi puoi procedere con la nuova disciplina: bloccheremo quella attuale in automatico.
             </p>
 
             <div className="flex gap-3">
