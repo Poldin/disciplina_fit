@@ -77,16 +77,28 @@ export default function NotificationPlanTimeline({
 
             const inner = (
               <>
-                <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-zinc-200 bg-white text-xs font-bold text-zinc-800 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200 sm:h-10 sm:w-10 sm:text-sm">
+                <div
+                  className={`relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 text-xs font-bold sm:h-10 sm:w-10 sm:text-sm ${
+                    open
+                      ? "border-emerald-600 bg-emerald-50 text-emerald-900 shadow-sm dark:border-emerald-500 dark:bg-emerald-950 dark:text-emerald-100"
+                      : "border-zinc-200 bg-white text-zinc-800 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200"
+                  }`}
+                >
                   {dayNumber}
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5 sm:pt-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400 mb-1">
-                    Giorno {dayNumber}
-                  </p>
+                  {open ? (
+                    <span className="mb-2 inline-flex items-center rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold tracking-wide text-zinc-900 dark:bg-zinc-200 dark:text-zinc-900">
+                      Giorno {dayNumber}
+                    </span>
+                  ) : (
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Giorno {dayNumber}
+                    </p>
+                  )}
                   {preview ? (
                     <p
-                      className={`text-sm leading-relaxed ${open ? "text-zinc-700 dark:text-zinc-300" : "text-zinc-500 dark:text-zinc-500"}`}
+                      className={`text-sm leading-relaxed ${open ? "text-zinc-800 dark:text-zinc-200" : "text-zinc-500 dark:text-zinc-500"}`}
                     >
                       {preview}
                     </p>
@@ -109,11 +121,11 @@ export default function NotificationPlanTimeline({
                 {open ? (
                   <Link
                     href={href}
-                    className="group flex flex-1 gap-4 rounded-xl p-3 -m-3 transition-colors hover:bg-zinc-100/80 dark:hover:bg-zinc-800/50 sm:gap-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-500"
+                    className="group flex flex-1 gap-4 rounded-xl border border-transparent p-3 -m-3 transition-all hover:border-emerald-200/90 hover:bg-emerald-50/70 hover:shadow-sm dark:hover:border-emerald-500/25 dark:hover:bg-emerald-950/35 sm:gap-5 focus:outline-none focus-visible:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:focus-visible:border-emerald-500/40 dark:focus-visible:ring-emerald-500/40"
                   >
                     {inner}
                     <span
-                      className="self-center text-zinc-400 group-hover:text-zinc-700 dark:group-hover:text-zinc-200 shrink-0"
+                      className="self-center text-emerald-600 group-hover:text-emerald-700 dark:text-emerald-400 dark:group-hover:text-emerald-300 shrink-0"
                       aria-hidden
                     >
                       <svg
@@ -132,7 +144,7 @@ export default function NotificationPlanTimeline({
                     </span>
                   </Link>
                 ) : (
-                  <div className="flex flex-1 gap-4 opacity-75 sm:gap-5 cursor-not-allowed p-3 -m-3">
+                  <div className="flex flex-1 gap-4 cursor-not-allowed p-3 -m-3 opacity-70 sm:gap-5">
                     {inner}
                   </div>
                 )}
