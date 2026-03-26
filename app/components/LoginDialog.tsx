@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createClient } from "@/app/utils/supabase/client";
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -8,42 +9,32 @@ interface LoginDialogProps {
 }
 
 export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
-  const [step, setStep] = useState<"phone" | "otp">("phone");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [step, setStep] = useState<"email" | "otp">("email");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [debugOtp, setDebugOtp] = useState<string | null>(null);
 
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/request-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phone: phoneNumber }),
+      const supabase = createClient();
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        email,
+        options: { shouldCreateUser: true },
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Errore nell\'invio del codice');
-      }
-
-      // TEST MODE: se WhatsApp fallisce, l'API restituisce il codice OTP
-      if (data.debugOtp) {
-        setDebugOtp(data.debugOtp);
+      if (otpError) {
+        throw new Error(otpError.message);
       }
 
       setStep("otp");
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore nell\'invio del codice');
+      setError(err instanceof Error ? err.message : "Errore nell'invio del codice");
     } finally {
       setIsLoading(false);
     }
@@ -55,47 +46,40 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/verify-otp', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          phone: phoneNumber,
-          otp: otp,
-        }),
+      const supabase = createClient();
+      const { error: verifyError } = await supabase.auth.verifyOtp({
+        email,
+        token: otp,
+        type: "email",
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Codice OTP non valido');
+      if (verifyError) {
+        throw new Error(verifyError.message);
       }
 
-      // Mostra messaggio di successo
-      setSuccessMessage(data.message || 'Accesso effettuato!');
-      
-      // Chiudi il dialog dopo un breve delay
+      // Crea il profilo se è la prima volta (nuovo utente)
+      await fetch("/api/auth/ensure-profile", { method: "POST" });
+
+      setSuccessMessage("Accesso effettuato!");
+
       setTimeout(() => {
         handleClose();
-        window.location.reload(); // Ricarica per aggiornare la sessione
-      }, 1500);
-
+        window.location.reload();
+      }, 1200);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Errore nella verifica del codice');
+      setError(err instanceof Error ? err.message : "Codice non valido o scaduto");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    setStep("phone");
-    setPhoneNumber("");
+    setStep("email");
+    setEmail("");
     setOtp("");
     setIsLoading(false);
     setError(null);
     setSuccessMessage(null);
-    setDebugOtp(null);
     onClose();
   };
 
@@ -104,11 +88,11 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Overlay */}
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={handleClose}
       />
-      
+
       {/* Dialog */}
       <div className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 py-8 px-4 border border-zinc-200 dark:border-zinc-800">
         {/* Close Button */}
@@ -124,13 +108,12 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
         {/* Header */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-            {step === "phone" ? "Accedi a disciplinaFit" : "Verifica il tuo numero"}
+            {step === "email" ? "Accedi a disciplinaFit" : "Controlla la tua email"}
           </h2>
           <p className="text-zinc-600 dark:text-zinc-400">
-            {step === "phone" 
-              ? "Inserisci il tuo numero di telefono per ricevere il codice OTP via WhatsApp"
-              : `Abbiamo inviato un codice via WhatsApp al ${phoneNumber}`
-            }
+            {step === "email"
+              ? "Inserisci la tua email per ricevere il codice di accesso"
+              : `Abbiamo inviato un codice a ${email}`}
           </p>
         </div>
 
@@ -148,33 +131,34 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
           </div>
         )}
 
-        {/* Phone Step */}
-        {step === "phone" && (
-          <form onSubmit={handlePhoneSubmit} className="space-y-6">
+        {/* Email Step */}
+        {step === "email" && (
+          <form onSubmit={handleEmailSubmit} className="space-y-6">
             <div>
-              <label 
-                htmlFor="phone" 
+              <label
+                htmlFor="email"
                 className="block text-sm font-medium text-zinc-900 dark:text-zinc-50 mb-2"
               >
-                Numero di telefono
+                Indirizzo email
               </label>
               <input
-                type="tel"
-                id="phone"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+39 123 456 7890"
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@esempio.com"
                 required
+                autoComplete="email"
                 className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all"
               />
             </div>
 
             <button
               type="submit"
-              disabled={isLoading || !phoneNumber}
+              disabled={isLoading || !email}
               className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Invio in corso..." : "Invia codice via WhatsApp"}
+              {isLoading ? "Invio in corso…" : "Invia codice via email"}
             </button>
           </form>
         )}
@@ -182,16 +166,9 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
         {/* OTP Step */}
         {step === "otp" && (
           <form onSubmit={handleOtpSubmit} className="space-y-6">
-            {/* TEST MODE: mostra OTP se WhatsApp non disponibile */}
-            {debugOtp && (
-              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg text-amber-800 dark:text-amber-300 text-sm">
-                <p className="font-medium mb-1">Modalità test</p>
-                <p>WhatsApp non disponibile. Il tuo codice OTP è: <span className="font-mono font-bold text-lg">{debugOtp}</span></p>
-              </div>
-            )}
             <div>
-              <label 
-                htmlFor="otp" 
+              <label
+                htmlFor="otp"
                 className="block text-sm font-medium text-zinc-900 dark:text-zinc-50 mb-2"
               >
                 Codice OTP
@@ -204,6 +181,8 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
                 placeholder="123456"
                 required
                 maxLength={6}
+                autoComplete="one-time-code"
+                inputMode="numeric"
                 className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all text-center text-2xl tracking-widest font-mono"
               />
             </div>
@@ -213,18 +192,19 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
               disabled={isLoading || otp.length !== 6}
               className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Verifica in corso..." : "Verifica codice"}
+              {isLoading ? "Verifica in corso…" : "Verifica codice"}
             </button>
 
             <button
               type="button"
               onClick={() => {
-                setStep("phone");
+                setStep("email");
+                setOtp("");
                 setError(null);
               }}
               className="w-full text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors"
             >
-              ← Cambia numero
+              ← Cambia email
             </button>
           </form>
         )}

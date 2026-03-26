@@ -40,7 +40,6 @@ CREATE TABLE public.message_schedule (
   CONSTRAINT message_schedule_pkey PRIMARY KEY (id),
   CONSTRAINT message_schedule_link_user_discipline_id_fkey FOREIGN KEY (link_user_discipline_id) REFERENCES public.link_user_disciplines(id)
 );
-
 CREATE TABLE public.otp_verifications (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   phone text NOT NULL,
@@ -53,12 +52,14 @@ CREATE TABLE public.otp_verifications (
 );
 CREATE TABLE public.profiles (
   id uuid NOT NULL,
-  phone text NOT NULL UNIQUE,
+  phone text UNIQUE,
   created_at timestamp with time zone DEFAULT now(),
   metadata jsonb,
   user_name text,
+  user_id uuid,
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
-  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
+  CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id),
+  CONSTRAINT profiles_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
 CREATE TABLE public.subscriptions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),

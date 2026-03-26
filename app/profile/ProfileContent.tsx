@@ -33,7 +33,7 @@ export default function ProfileContent() {
     }
   }, [loading, user, router]);
 
-  const phone = user?.user_metadata?.phone || user?.phone || "—";
+  const email = user?.email || "—";
 
   const handleLogout = async () => {
     setLogoutOpen(false);
@@ -95,8 +95,8 @@ export default function ProfileContent() {
             <p className="text-lg text-zinc-900 dark:text-zinc-50">{userName?.trim() || "—"}</p>
           </div>
           <div>
-            <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Telefono</p>
-            <p className="text-lg text-zinc-900 dark:text-zinc-50">{phone}</p>
+            <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Email</p>
+            <p className="text-lg text-zinc-900 dark:text-zinc-50">{email}</p>
           </div>
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Account attivo dal {formatActivationDate(user.created_at)}
