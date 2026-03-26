@@ -10,4 +10,5 @@ export interface Discipline {
   img_url: string | null;
   lenght_days: number | null;
   metadata: Record<string, unknown> | null;
+  notification_plan?: Record<string, unknown> | null;
 }

@@ -22,18 +22,36 @@ function getOneSignalServerConfig(): { appId: string; apiKey: string } {
   return { appId: appId.trim(), apiKey: apiKey.trim() };
 }
 
+export type SendPushOptions = {
+  /** URL assoluto aperto al tap (web / PWA) */
+  url?: string;
+};
+
 /**
  * Notifica push al singolo utente (web/app) identificato da external_id.
  */
 export async function sendPushToExternalUser(
   externalUserId: string,
   body: string,
-  title: string = DEFAULT_TITLE
+  title: string = DEFAULT_TITLE,
+  options?: SendPushOptions
 ): Promise<SendPushResult> {
   const { appId, apiKey } = getOneSignalServerConfig();
   const text = body.trim();
   if (!text) {
     return { ok: false, reason: 'Empty notification body' };
+  }
+
+  const payload: Record<string, unknown> = {
+    app_id: appId,
+    target_channel: 'push',
+    include_aliases: { external_id: [externalUserId] },
+    headings: { it: title, en: title },
+    contents: { it: text, en: text },
+  };
+  const openUrl = options?.url?.trim();
+  if (openUrl) {
+    payload.url = openUrl;
   }
 
   const response = await fetch(ONESIGNAL_NOTIFICATIONS_URL, {
@@ -42,13 +60,7 @@ export async function sendPushToExternalUser(
       Authorization: `Key ${apiKey}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      app_id: appId,
-      target_channel: 'push',
-      include_aliases: { external_id: [externalUserId] },
-      headings: { it: title, en: title },
-      contents: { it: text, en: text },
-    }),
+    body: JSON.stringify(payload),
   });
 
   const data = (await response.json()) as { id?: string };

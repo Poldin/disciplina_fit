@@ -1,18 +1,28 @@
 import { createAdminClient } from '@/app/utils/supabase/admin';
 import { sendPushToExternalUser } from '@/app/utils/onesignalPush';
+import { getPublicSiteUrl } from '@/app/utils/publicSiteUrl';
 
 type ScheduledMessageRow = {
   id: string;
   send_time_utc: string | null;
   link_user_discipline_id: number | null;
+  day_number: number | null;
   metadata: { message?: string } | null;
 };
 
-type LinkRow = {
+type LinkRowRaw = {
   id: number;
   user_id: string | null;
   stopped_at: string | null;
+  disciplines: { slug: string } | { slug: string }[] | null;
 };
+
+function disciplineSlugFromLink(link: LinkRowRaw): string | null {
+  const d = link.disciplines;
+  if (!d) return null;
+  if (Array.isArray(d)) return d[0]?.slug?.trim() ?? null;
+  return d.slug?.trim() ?? null;
+}
 
 export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
   const supabaseAdmin = createAdminClient();
@@ -21,7 +31,7 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
 
   const { data: dueMessages, error: dueError } = await supabaseAdmin
     .from('message_schedule')
-    .select('id, send_time_utc, link_user_discipline_id, metadata')
+    .select('id, send_time_utc, link_user_discipline_id, day_number, metadata')
     .eq('is_sent', false)
     .not('send_time_utc', 'is', null)
     .lte('send_time_utc', nowIso)
@@ -55,7 +65,7 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
 
   const { data: linkRows, error: linkError } = await supabaseAdmin
     .from('link_user_disciplines')
-    .select('id, user_id, stopped_at')
+    .select('id, user_id, stopped_at, disciplines(slug)')
     .in('id', linkIds);
 
   if (linkError) {
@@ -63,8 +73,9 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     throw new Error(`Query link_user_disciplines failed: ${linkError.message}`);
   }
 
-  const links = (linkRows ?? []) as LinkRow[];
-  const linkById = new Map<number, LinkRow>(links.map((l) => [l.id, l]));
+  const links = (linkRows ?? []) as LinkRowRaw[];
+  const linkById = new Map<number, LinkRowRaw>(links.map((l) => [l.id, l]));
+  const baseUrl = getPublicSiteUrl();
 
   const successfullySentIds: string[] = [];
   let failed = 0;
@@ -88,12 +99,26 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     }
 
     const userId = link.user_id;
+    const slug = disciplineSlugFromLink(link);
+    const dayNum =
+      msg.day_number != null ? Number(msg.day_number) : NaN;
+    const openUrl =
+      slug && Number.isFinite(dayNum) && dayNum >= 1
+        ? `${baseUrl}/disciplina/${encodeURIComponent(slug)}/day/${dayNum}`
+        : slug
+          ? `${baseUrl}/disciplina/${encodeURIComponent(slug)}`
+          : undefined;
+    if (!slug) {
+      console.warn(`[sendScheduledMessages] skip message=${msg.id} reason=missing_discipline_slug linkId=${linkId}`);
+      failed += 1;
+      continue;
+    }
 
     try {
       console.log(
-        `[sendScheduledMessages] push message=${msg.id} userId=${userId} linkId=${linkId} sendTimeUtc=${msg.send_time_utc}`
+        `[sendScheduledMessages] push message=${msg.id} userId=${userId} linkId=${linkId} sendTimeUtc=${msg.send_time_utc} url=${openUrl ?? 'none'}`
       );
-      const result = await sendPushToExternalUser(userId, body);
+      const result = await sendPushToExternalUser(userId, body, undefined, { url: openUrl });
       if (!result.ok) {
         failed += 1;
         console.warn(`[sendScheduledMessages] push failed message=${msg.id} userId=${userId}: ${result.reason}`);
@@ -112,7 +137,7 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     console.log(`[sendScheduledMessages] marking is_sent=true count=${successfullySentIds.length}`);
     const { error: markError } = await supabaseAdmin
       .from('message_schedule')
-      .update({ is_sent: true })
+      .update({ is_sent: true, sent_at: nowIso })
       .in('id', successfullySentIds)
       .eq('is_sent', false);
 

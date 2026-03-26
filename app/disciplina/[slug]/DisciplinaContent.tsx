@@ -8,6 +8,7 @@ import UserInfoBanner from "@/app/components/UserInfoBanner";
 import LoginDialog from "@/app/components/LoginDialog";
 import SubscriptionDialog from "@/app/components/SubscriptionDialog";
 import Footer from "@/app/components/Footer";
+import NotificationPlanTimeline from "@/app/components/NotificationPlanTimeline";
 import { useAuth } from "@/app/components/AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
 import type { Discipline } from "@/app/utils/types";
@@ -469,6 +470,13 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             </button>
           </div>
         )}
+
+        <NotificationPlanTimeline
+          disciplineSlug={discipline.slug}
+          disciplineId={discipline.id}
+          notificationPlan={discipline.notification_plan}
+          joined={joined}
+        />
       </main>
 
       {/* Footer */}

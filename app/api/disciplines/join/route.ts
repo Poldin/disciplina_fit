@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Popola message_schedule con i messaggi del notification_plan (partendo da domani UTC)
+    // Popola message_schedule con notification_plan (day_number = N di day_N; invii da domani UTC)
     const plan = disciplineData?.notification_plan as NotificationPlan | null;
     if (plan) {
       const nowUtc = new Date();

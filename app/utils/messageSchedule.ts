@@ -47,7 +47,12 @@ export async function populateMessageSchedule(
     return { inserted: 0 };
   }
 
-  const rows: { send_time_utc: string; link_user_discipline_id: number; metadata: { message: string } }[] = [];
+  const rows: {
+    send_time_utc: string;
+    link_user_discipline_id: number;
+    day_number: number;
+    metadata: { message: string };
+  }[] = [];
 
   // Domani a mezzanotte UTC
   const startDate = new Date(Date.UTC(
@@ -73,6 +78,7 @@ export async function populateMessageSchedule(
       rows.push({
         send_time_utc: sendTime.toISOString(),
         link_user_discipline_id: linkUserDisciplineId,
+        day_number: dayNum,
         metadata: { message: msg.message },
       });
     }
