@@ -177,10 +177,10 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
                 type="text"
                 id="otp"
                 value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="123456"
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                placeholder="12345678"
                 required
-                maxLength={6}
+                maxLength={8}
                 autoComplete="one-time-code"
                 inputMode="numeric"
                 className="w-full px-4 py-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-900 dark:focus:ring-zinc-100 transition-all text-center text-2xl tracking-widest font-mono"
@@ -189,7 +189,7 @@ export default function LoginDialog({ isOpen, onClose }: LoginDialogProps) {
 
             <button
               type="submit"
-              disabled={isLoading || otp.length !== 6}
+              disabled={isLoading || otp.length < 6}
               className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "Verifica in corso…" : "Verifica codice"}
