@@ -1,27 +1,14 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { sendDueScheduledMessages } from '@/app/utils/sendScheduledMessages';
 
 /**
- * Endpoint server triggerabile dall'esterno:
+ * Endpoint server triggerabile dall'esterno (es. cron Supabase):
  * invia notifiche push (OneSignal) per le righe message_schedule non ancora inviate
  * con send_time_utc <= now (UTC), poi marca is_sent=true sui successi.
  *
- * Protezione: Authorization: Bearer <SCHEDULE_TRIGGER_SECRET>
+ * TODO: ripristinare verifica Authorization (Bearer / secret) prima della produzione pubblica.
  */
-export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const expectedSecret = process.env.SCHEDULE_TRIGGER_SECRET;
-
-  if (!expectedSecret || authHeader !== `Bearer ${expectedSecret}`) {
-    console.warn('[external/send-scheduled-messages] unauthorized request', {
-      hasExpectedSecret: Boolean(expectedSecret),
-      authHeaderPresent: Boolean(authHeader),
-      authHeaderPrefix: authHeader ? authHeader.slice(0, 7) : null, // e.g. "Bearer "
-      authHeaderLen: authHeader ? authHeader.length : 0,
-    });
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
+export async function POST() {
   try {
     console.log('[external/send-scheduled-messages] trigger accepted');
     const result = await sendDueScheduledMessages(new Date());
