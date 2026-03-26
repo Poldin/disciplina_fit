@@ -67,7 +67,7 @@ export default function NotificationPlanTimeline({
 
       <div className="relative">
         <div
-          className="absolute left-[15px] top-3 bottom-3 w-px bg-zinc-200 dark:bg-zinc-700 sm:left-[19px]"
+          className="absolute left-[15px] top-3 bottom-3 z-0 w-px bg-zinc-200 dark:bg-zinc-700 sm:left-[19px]"
           aria-hidden
         />
         <ul className="space-y-0">
@@ -77,7 +77,7 @@ export default function NotificationPlanTimeline({
 
             const inner = (
               <>
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-zinc-200 bg-zinc-50 text-xs font-bold text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 sm:h-10 sm:w-10 sm:text-sm z-10">
+                <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-zinc-200 bg-white text-xs font-bold text-zinc-800 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200 sm:h-10 sm:w-10 sm:text-sm">
                   {dayNumber}
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5 sm:pt-1">
