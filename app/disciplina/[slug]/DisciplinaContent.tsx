@@ -37,6 +37,12 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [activeDiscipline, setActiveDiscipline] = useState<ActiveDisciplineInfo | null>(null);
   const { user, subscription, subscriptionInfo, refreshSubscription } = useAuth();
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
+  /** Challenge attiva: descrizione lunga in fisarmonica (chiusa di default) */
+  const [longDescOpen, setLongDescOpen] = useState(false);
+
+  useEffect(() => {
+    setLongDescOpen(false);
+  }, [discipline.id]);
 
   // Pulisce l'URL dopo il ritorno da Stripe Checkout
   useEffect(() => {
@@ -436,25 +442,65 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
           )}
         </div>
 
-        {/* Description with Markdown */}
+        {/* Description with Markdown — fisarmonica se la challenge è attiva */}
         {discipline.long_desc && (
           <div className="prose prose-zinc dark:prose-invert max-w-none">
-            <div className="">
+            <div
+              className={
+                joined && !longDescOpen
+                  ? "relative max-h-68 overflow-hidden sm:max-h-80"
+                  : ""
+              }
+            >
               <ReactMarkdown
                 components={{
-                  h1: ({node, ...props}) => <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-4" {...props} />,
-                  h2: ({node, ...props}) => <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mt-8 mb-4" {...props} />,
-                  h3: ({node, ...props}) => <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mt-6 mb-3" {...props} />,
-                  p: ({node, ...props}) => <p className="text-zinc-700 dark:text-zinc-300 mb-4 leading-relaxed" {...props} />,
-                  ul: ({node, ...props}) => <ul className="list-disc list-inside text-zinc-700 dark:text-zinc-300 mb-4 space-y-2" {...props} />,
-                  ol: ({node, ...props}) => <ol className="list-decimal list-inside text-zinc-700 dark:text-zinc-300 mb-4 space-y-2" {...props} />,
-                  strong: ({node, ...props}) => <strong className="font-semibold text-zinc-900 dark:text-zinc-50" {...props} />,
-                  blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-zinc-300 dark:border-zinc-700 pl-4 italic text-zinc-600 dark:text-zinc-400 my-4" {...props} />,
+                  h1: ({ node, ...props }) => (
+                    <h1 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-4" {...props} />
+                  ),
+                  h2: ({ node, ...props }) => (
+                    <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mt-8 mb-4" {...props} />
+                  ),
+                  h3: ({ node, ...props }) => (
+                    <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mt-6 mb-3" {...props} />
+                  ),
+                  p: ({ node, ...props }) => (
+                    <p className="text-zinc-700 dark:text-zinc-300 mb-4 leading-relaxed" {...props} />
+                  ),
+                  ul: ({ node, ...props }) => (
+                    <ul className="list-disc list-inside text-zinc-700 dark:text-zinc-300 mb-4 space-y-2" {...props} />
+                  ),
+                  ol: ({ node, ...props }) => (
+                    <ol className="list-decimal list-inside text-zinc-700 dark:text-zinc-300 mb-4 space-y-2" {...props} />
+                  ),
+                  strong: ({ node, ...props }) => (
+                    <strong className="font-semibold text-zinc-900 dark:text-zinc-50" {...props} />
+                  ),
+                  blockquote: ({ node, ...props }) => (
+                    <blockquote
+                      className="border-l-4 border-zinc-300 dark:border-zinc-700 pl-4 italic text-zinc-600 dark:text-zinc-400 my-4"
+                      {...props}
+                    />
+                  ),
                 }}
               >
                 {discipline.long_desc}
               </ReactMarkdown>
+              {joined && !longDescOpen && (
+                <div
+                  className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-zinc-50 via-zinc-50/90 to-transparent dark:from-black dark:via-black/90 dark:to-transparent"
+                  aria-hidden
+                />
+              )}
             </div>
+            {joined && (
+              <button
+                type="button"
+                onClick={() => setLongDescOpen((o) => !o)}
+                className="not-prose mt-4 text-sm font-semibold text-zinc-900 underline decoration-zinc-400 underline-offset-4 hover:decoration-zinc-600 dark:text-zinc-100 dark:decoration-zinc-500 dark:hover:decoration-zinc-300"
+              >
+                {longDescOpen ? "Vedi meno" : "Vedi di più"}
+              </button>
+            )}
           </div>
         )}
 
