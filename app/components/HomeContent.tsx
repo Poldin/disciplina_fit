@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Header from "./Header";
-import UserInfoBanner from "./UserInfoBanner";
 import LoginDialog from "./LoginDialog";
 import Footer from "./Footer";
 import { useAuth } from "./AuthProvider";
@@ -91,8 +90,6 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
       {/* Header */}
       <Header onLoginClick={() => setIsLoginOpen(true)} />
-
-      <UserInfoBanner />
 
       {/* Disciplina attiva */}
       {user && subscriptionInfo?.hasAccess && activeDiscipline && (

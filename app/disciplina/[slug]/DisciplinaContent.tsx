@@ -4,7 +4,6 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import Header from "@/app/components/Header";
-import UserInfoBanner from "@/app/components/UserInfoBanner";
 import LoginDialog from "@/app/components/LoginDialog";
 import SubscriptionDialog from "@/app/components/SubscriptionDialog";
 import Footer from "@/app/components/Footer";
@@ -214,8 +213,6 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       {/* Header */}
       <Header onLoginClick={() => setIsLoginOpen(true)} />
 
-      <UserInfoBanner />
-
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Back Link + Condividi */}
@@ -255,13 +252,21 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
           {/* Bollino Iscrizione + Pulsante Blocca */}
           {joined && (
             <div className="flex flex-col items-start gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
-              <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 border border-green-500 dark:border-green-600 rounded-full">
-                <div className="w-5 h-5 bg-green-500 dark:bg-green-600 rounded-full flex items-center justify-center shrink-0">
-                  <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              <div className="inline-flex items-center gap-3">
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-emerald-600 bg-emerald-50 dark:border-emerald-500 dark:bg-emerald-950"
+                  aria-hidden
+                >
+                  <svg
+                    className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className="text-green-700 dark:text-green-400 font-semibold text-sm">
+                <span className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
                   Iscrizione eseguita, non mollare!
                 </span>
               </div>
