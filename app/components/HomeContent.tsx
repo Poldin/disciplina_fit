@@ -225,29 +225,6 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                       style={{ width: `${activeProgress.pct}%` }}
                     />
                   </div>
-                  {activeProgress.segmentDayNumbers.length > 0 &&
-                    activeProgress.segmentDayNumbers.length <= 36 && (
-                      <div
-                        className="flex gap-0.5"
-                        role="presentation"
-                        aria-hidden
-                      >
-                        {activeProgress.segmentDayNumbers.map((dayNum) => {
-                          const open = activeProgress.sent.has(dayNum);
-                          return (
-                            <div
-                              key={dayNum}
-                              title={`Giorno ${dayNum}${open ? " · sbloccato" : ""}`}
-                              className={`min-w-0 flex-1 h-1.5 rounded-sm ${
-                                open
-                                  ? "bg-emerald-500 dark:bg-emerald-500"
-                                  : "bg-zinc-200 dark:bg-zinc-700"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
                 </div>
               )}
             </Link>
