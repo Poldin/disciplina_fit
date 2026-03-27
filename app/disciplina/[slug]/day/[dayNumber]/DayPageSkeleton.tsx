@@ -17,16 +17,12 @@ export default function DayPageSkeleton({
           >
             ← indietro
           </Link>
-          <div
-            className="text-center text-4xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums dark:text-zinc-50 sm:text-5xl md:text-6xl"
-            aria-hidden
-          >
-            GIORNO {dayNumber}
+          <div className="flex flex-col items-center gap-1" aria-hidden>
+            <div className="text-center text-4xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums dark:text-zinc-50 sm:text-5xl md:text-6xl">
+              GIORNO {dayNumber}
+            </div>
+            <div className="h-3 w-48 max-w-[90%] animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
           </div>
-          <div
-            className="mx-auto h-3 w-48 max-w-[90%] animate-pulse rounded bg-zinc-200 dark:bg-zinc-800"
-            aria-hidden
-          />
         </header>
         <div className="space-y-4" aria-hidden>
           {[0, 1].map((i) => (
