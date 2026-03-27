@@ -14,11 +14,16 @@ export default function LinkPreviewBlock({ url }: { url: string }) {
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/link-preview?url=${encodeURIComponent(url)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((data: LinkPreviewData) => {
+      .then(async (r) => {
+        const json = await r.json();
+        if (!r.ok) throw new Error(json?.error ?? `HTTP ${r.status}`);
+        return json as LinkPreviewData;
+      })
+      .then((data) => {
         if (!cancelled) setState({ status: "ok", data });
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("[LinkPreviewBlock] fetch failed:", err);
         if (!cancelled) setState({ status: "error" });
       });
     return () => {
@@ -55,6 +60,7 @@ export default function LinkPreviewBlock({ url }: { url: string }) {
   }
 
   const { data } = state;
+  const hasImage = !!data.image;
 
   return (
     <a
@@ -63,11 +69,11 @@ export default function LinkPreviewBlock({ url }: { url: string }) {
       rel="noopener noreferrer"
       className="group block overflow-hidden rounded-xl border border-zinc-200 bg-white transition-shadow hover:shadow-md dark:border-zinc-700 dark:bg-zinc-900 dark:hover:shadow-zinc-800/40"
     >
-      {/* Immagine OG in cima se disponibile */}
-      {data.image ? (
+      {/* Immagine OG in cima — solo se disponibile */}
+      {hasImage ? (
         /* eslint-disable-next-line @next/next/no-img-element */
         <img
-          src={data.image}
+          src={data.image!}
           alt={data.title ?? ""}
           className="h-40 w-full object-cover sm:h-48"
           onError={(e) => {
@@ -76,38 +82,28 @@ export default function LinkPreviewBlock({ url }: { url: string }) {
         />
       ) : null}
 
-      <div className="flex items-start gap-3 p-4">
+      <div className="flex items-center gap-3 p-4">
         {/* Favicon */}
-        {data.favicon ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={data.favicon}
-            alt=""
-            className="mt-0.5 h-4 w-4 shrink-0 rounded-sm object-contain"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = "none";
-            }}
-          />
-        ) : null}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={data.favicon ?? `https://${new URL(data.url).hostname}/favicon.ico`}
+          alt=""
+          className="h-5 w-5 shrink-0 rounded object-contain"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).style.display = "none";
+          }}
+        />
 
         <div className="min-w-0 flex-1">
           {/* Site name */}
-          {data.siteName ? (
-            <p className="mb-0.5 truncate text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
-              {data.siteName}
-            </p>
-          ) : null}
+          <p className="mb-0.5 truncate text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-500">
+            {data.siteName ?? new URL(data.url).hostname.replace(/^www\./, "")}
+          </p>
 
-          {/* Titolo */}
-          {data.title ? (
-            <p className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 group-hover:underline group-hover:underline-offset-2 dark:text-zinc-100">
-              {data.title}
-            </p>
-          ) : (
-            <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">
-              {data.url}
-            </p>
-          )}
+          {/* Titolo o URL come fallback */}
+          <p className="line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 group-hover:underline group-hover:underline-offset-2 dark:text-zinc-100">
+            {data.title ?? data.url}
+          </p>
 
           {/* Descrizione */}
           {data.description ? (
@@ -116,6 +112,17 @@ export default function LinkPreviewBlock({ url }: { url: string }) {
             </p>
           ) : null}
         </div>
+
+        {/* Freccia */}
+        <svg
+          className="h-4 w-4 shrink-0 text-zinc-300 dark:text-zinc-600"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path d="M7 17L17 7M17 7H7M17 7v10" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
       </div>
     </a>
   );

@@ -11,7 +11,6 @@ export type LinkPreviewData = {
 };
 
 function extractMeta(html: string, property: string): string | null {
-  // Prova prima con property="og:xxx", poi name="xxx"
   const patterns = [
     new RegExp(
       `<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`,
@@ -50,8 +49,8 @@ function resolveUrl(base: string, relative: string): string {
   }
 }
 
+/** Risponde sempre con 200 + dati parziali — mai un errore HTTP che blocchi il componente */
 export async function GET(request: NextRequest) {
-  // Solo utenti autenticati possono usare questo proxy
   const supabase = await createClient();
   const {
     data: { user },
@@ -73,40 +72,59 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "URL non valido" }, { status: 400 });
   }
 
+  const hostname = parsedUrl.hostname.replace(/^www\./, "");
+  const origin = parsedUrl.origin;
+
+  // Fallback minimo: mostriamo almeno il dominio anche se il fetch fallisce
+  const fallback: LinkPreviewData = {
+    url: parsedUrl.href,
+    title: null,
+    description: null,
+    image: null,
+    siteName: hostname,
+    favicon: `${origin}/favicon.ico`,
+  };
+
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
+    const timeout = setTimeout(() => controller.abort(), 8000);
 
     const res = await fetch(parsedUrl.href, {
       signal: controller.signal,
+      redirect: "follow",
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; DisciplinaFitBot/1.0; +https://disciplinafit.com)",
-        Accept: "text/html",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept:
+          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "it-IT,it;q=0.9,en;q=0.8",
       },
     });
     clearTimeout(timeout);
 
     if (!res.ok) {
-      return NextResponse.json({ error: "Fetch fallito" }, { status: 502 });
+      console.warn(`[link-preview] ${parsedUrl.href} → HTTP ${res.status}`);
+      return NextResponse.json(fallback, {
+        headers: { "Cache-Control": "public, max-age=3600" },
+      });
     }
 
-    // Leggiamo solo i primi 50KB per non rallentare (i tag OG sono sempre in <head>)
+    // Leggi solo i primi 60KB — i tag OG sono sempre in <head>
     const reader = res.body?.getReader();
-    if (!reader) throw new Error("no body");
+    if (!reader) return NextResponse.json(fallback);
 
     let html = "";
     let bytes = 0;
-    const limit = 50 * 1024;
+    const limit = 60 * 1024;
     while (bytes < limit) {
       const { done, value } = await reader.read();
       if (done) break;
       html += new TextDecoder().decode(value);
       bytes += value.byteLength;
+      // Smetti di leggere appena troviamo </head>
+      if (html.includes("</head>")) break;
     }
     reader.cancel();
-
-    const origin = parsedUrl.origin;
 
     const data: LinkPreviewData = {
       url: parsedUrl.href,
@@ -126,7 +144,7 @@ export async function GET(request: NextRequest) {
         return img ? resolveUrl(origin, img) : null;
       })(),
       siteName:
-        extractMeta(html, "og:site_name") ?? parsedUrl.hostname.replace(/^www\./, ""),
+        extractMeta(html, "og:site_name") ?? hostname,
       favicon: `${origin}/favicon.ico`,
     };
 
@@ -134,7 +152,9 @@ export async function GET(request: NextRequest) {
       headers: { "Cache-Control": "public, max-age=3600" },
     });
   } catch (err) {
-    console.error("[link-preview]", err);
-    return NextResponse.json({ error: "Errore server" }, { status: 500 });
+    console.error("[link-preview] fetch error:", err);
+    return NextResponse.json(fallback, {
+      headers: { "Cache-Control": "public, max-age=60" },
+    });
   }
 }
