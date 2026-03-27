@@ -1,6 +1,6 @@
 /**
- * Etichetta orario per messaggio da message_schedule (it-IT, fuso locale del browser).
- * is_sent + sent_at → invio effettivo; altrimenti send_time_utc → previsto.
+ * Orario messaggio da message_schedule (it-IT, fuso locale del browser).
+ * Inviato: solo data e ora. Non inviato: "Previsto: …".
  */
 export function messageScheduleCaption(
   isSent: boolean,
@@ -20,11 +20,11 @@ export function messageScheduleCaption(
     if (!iso) return null;
     const d = new Date(iso);
     if (Number.isNaN(d.getTime())) return null;
-    return `Invio effettivo: ${d.toLocaleString("it-IT", opts)}`;
+    return d.toLocaleString("it-IT", opts);
   }
 
   if (!sendTimeUtc) return null;
   const d = new Date(sendTimeUtc);
   if (Number.isNaN(d.getTime())) return null;
-  return `Invio previsto: ${d.toLocaleString("it-IT", opts)}`;
+  return `Previsto: ${d.toLocaleString("it-IT", opts)}`;
 }
