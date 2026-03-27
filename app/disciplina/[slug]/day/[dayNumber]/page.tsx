@@ -38,6 +38,7 @@ export default async function DisciplinaDayPage({
       dayNumber={dayNum}
       disciplineTitle={result.disciplineTitle}
       segments={result.segments}
+      pathProgress={result.pathProgress}
     />
   );
 }

@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/app/utils/supabase/admin";
 import { markDayNotificationOpened } from "@/app/utils/markDayNotificationOpened";
+import {
+  computeDayPagePathProgress,
+  type DayPagePathProgress,
+} from "@/app/utils/disciplinePathProgress";
 
 export type DayContentSegment = {
   id: string;
@@ -20,7 +24,12 @@ type ScheduleRow = {
 };
 
 export type LoadDisciplineDayContentResult =
-  | { ok: true; disciplineTitle: string | null; segments: DayContentSegment[] }
+  | {
+      ok: true;
+      disciplineTitle: string | null;
+      segments: DayContentSegment[];
+      pathProgress: DayPagePathProgress | null;
+    }
   | { ok: false; kind: "not_found" }
   | { ok: false; kind: "db"; message: string };
 
@@ -35,7 +44,7 @@ export async function loadDisciplineDayContent(
 ): Promise<LoadDisciplineDayContentResult> {
   const { data: discipline } = await supabase
     .from("disciplines")
-    .select("id, title, slug")
+    .select("id, title, slug, notification_plan, lenght_days")
     .eq("slug", slug)
     .single();
 
@@ -56,16 +65,29 @@ export async function loadDisciplineDayContent(
     return { ok: false, kind: "not_found" };
   }
 
-  const { data: rows, error } = await admin
-    .from("message_schedule")
-    .select("id, day_number, metadata, send_time_utc, is_sent, sent_at")
-    .eq("link_user_discipline_id", link.id)
-    .eq("day_number", dayNum)
-    .order("send_time_utc", { ascending: true });
+  const [dayQuery, sentQuery] = await Promise.all([
+    admin
+      .from("message_schedule")
+      .select("id, day_number, metadata, send_time_utc, is_sent, sent_at")
+      .eq("link_user_discipline_id", link.id)
+      .eq("day_number", dayNum)
+      .order("send_time_utc", { ascending: true }),
+    admin
+      .from("message_schedule")
+      .select("day_number")
+      .eq("link_user_discipline_id", link.id)
+      .eq("is_sent", true),
+  ]);
 
+  const { data: rows, error } = dayQuery;
   if (error) {
     console.error("[disciplineDayContent] message_schedule", error);
     return { ok: false, kind: "db", message: error.message };
+  }
+
+  if (sentQuery.error) {
+    console.error("[disciplineDayContent] message_schedule sent days", sentQuery.error);
+    return { ok: false, kind: "db", message: sentQuery.error.message };
   }
 
   const list = (rows ?? []) as ScheduleRow[];
@@ -90,9 +112,27 @@ export async function loadDisciplineDayContent(
     })
     .filter((s) => s.text.length > 0);
 
+  const sentDayNumbers = [
+    ...new Set(
+      (sentQuery.data ?? [])
+        .map((r) =>
+          r.day_number == null ? NaN : Number(r.day_number)
+        )
+        .filter((n) => Number.isFinite(n))
+    ),
+  ];
+
+  const pathProgress = computeDayPagePathProgress(
+    discipline.notification_plan,
+    discipline.lenght_days,
+    sentDayNumbers,
+    dayNum
+  );
+
   return {
     ok: true,
     disciplineTitle: discipline.title,
     segments,
+    pathProgress,
   };
 }

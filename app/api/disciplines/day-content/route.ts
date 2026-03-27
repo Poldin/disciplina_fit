@@ -33,5 +33,6 @@ export async function GET(request: NextRequest) {
   return NextResponse.json({
     disciplineTitle: result.disciplineTitle,
     segments: result.segments,
+    pathProgress: result.pathProgress,
   });
 }
