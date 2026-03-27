@@ -307,7 +307,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 
                 <button className={`w-full py-2 font-medium rounded-lg transition-colors duration-200 ${
                   joinedDisciplineIds.has(discipline.id)
-                    ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 border border-green-500 dark:border-green-600"
+                    ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-600/40"
                     : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-50"
                 }`}>
                   {joinedDisciplineIds.has(discipline.id) ? "In esecuzione" : "Partecipa"}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
 
-const MAX_NAME_LENGTH = 50;
+const MAX_NAME_LENGTH = 15;
 
 export async function PATCH(request: NextRequest) {
   try {

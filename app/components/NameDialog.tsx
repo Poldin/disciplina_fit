@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const MAX_NAME_LENGTH = 50;
+const MAX_NAME_LENGTH = 15;
 
 interface NameDialogProps {
   isOpen: boolean;
