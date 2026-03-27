@@ -84,7 +84,7 @@ export default function ProfileContent() {
           href="/"
           className="inline-block text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-50 mb-8"
         >
-          ← Torna alla home
+          ← indietro
         </Link>
 
         <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-8">Profilo</h1>

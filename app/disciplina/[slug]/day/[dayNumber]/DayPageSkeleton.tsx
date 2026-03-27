@@ -15,7 +15,7 @@ export default function DayPageSkeleton({
             href={`/disciplina/${encodeURIComponent(slug)}`}
             className="hover:text-zinc-800 dark:hover:text-zinc-200 underline-offset-2 hover:underline"
           >
-            ← Torna alla disciplina
+            ← indietro
           </Link>
         </p>
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 mb-8">
