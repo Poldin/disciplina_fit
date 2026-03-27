@@ -41,7 +41,15 @@ export default function DisciplinaDayPageClient({
           </h1>
 
           {pathProgress ? (
-            <div className="space-y-2">
+            <div
+              className="space-y-2 overflow-visible"
+              role="group"
+              aria-label={
+                pathProgress.currentOrdinal != null
+                  ? `Avanzamento: ${pathProgress.completed} su ${pathProgress.total} giorni con invio effettuato. Questo giorno è il ${pathProgress.currentOrdinal}-esimo passo su ${pathProgress.total}.`
+                  : `Avanzamento: ${pathProgress.completed} su ${pathProgress.total} giorni con invio effettuato. Giorno ${dayNumber} rispetto a ${pathProgress.total} passi nel percorso.`
+              }
+            >
               <div className="flex flex-col gap-1.5 text-xs sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-6 sm:gap-y-1">
                 <p className="text-zinc-600 dark:text-zinc-400">
                   <span className="font-medium text-emerald-700 dark:text-emerald-400">
@@ -74,10 +82,7 @@ export default function DisciplinaDayPageClient({
                   )}
                 </p>
               </div>
-              <div
-                className="relative h-2 w-full rounded-full"
-                aria-hidden
-              >
+              <div className="relative h-2 w-full">
                 <div className="absolute inset-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
                 <div
                   className="absolute left-0 top-0 h-2 rounded-full bg-emerald-500 dark:bg-emerald-500"

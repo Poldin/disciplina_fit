@@ -10,18 +10,27 @@ export type DayPagePathProgress = {
   currentOrdinal: number | null;
 };
 
+function normalizeLengthDays(
+  lenghtDays: number | string | null | undefined
+): number {
+  if (lenghtDays == null) return 0;
+  const n = typeof lenghtDays === "number" ? lenghtDays : Number(lenghtDays);
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
+}
+
 export function computeDayPagePathProgress(
   notificationPlan: unknown,
-  lenghtDays: number | null | undefined,
+  lenghtDays: number | string | null | undefined,
   sentDayNumbers: number[],
   currentDayNumber: number
 ): DayPagePathProgress | null {
   const planDays = listNotificationPlanDayPreviews(notificationPlan);
+  const len = normalizeLengthDays(lenghtDays);
   const segmentDayNumbers: number[] =
     planDays.length > 0
       ? planDays.map((d) => d.dayNumber)
-      : lenghtDays && lenghtDays > 0
-        ? Array.from({ length: lenghtDays }, (_, i) => i + 1)
+      : len > 0
+        ? Array.from({ length: len }, (_, i) => i + 1)
         : [];
 
   if (segmentDayNumbers.length === 0) return null;

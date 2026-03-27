@@ -23,6 +23,20 @@ export default function DayPageSkeleton({
           >
             GIORNO {dayNumber}
           </div>
+          <div className="space-y-2" aria-hidden>
+            <div className="flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:justify-between sm:gap-y-1">
+              <div className="h-3 w-52 max-w-full animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+              <div className="h-3 w-44 max-w-full animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+            <div className="relative h-2 w-full">
+              <div className="absolute inset-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+              <div className="absolute left-0 top-0 h-2 w-1/3 rounded-full bg-emerald-500 dark:bg-emerald-500" />
+              <div
+                className="absolute top-1/2 z-10 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white dark:bg-white"
+                style={{ left: "55%" }}
+              />
+            </div>
+          </div>
         </header>
         <div className="space-y-4" aria-hidden>
           {[0, 1].map((i) => (
