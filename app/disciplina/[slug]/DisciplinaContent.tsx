@@ -432,10 +432,10 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-800">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
-              Vuoi davvero mollare?
+              Vuoi davvero interromperlo?
             </h3>
             <p className="text-zinc-700 dark:text-zinc-300 mb-6 text-sm leading-relaxed">
-              Vuoi davvero mollare e procedere al blocco della disciplina?
+              Vuoi davvero procedere con l'interruzione della disciplina?
             </p>
             <div className="flex gap-3">
               <button
