@@ -1,6 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/app/utils/supabase/server";
+import { loadDisciplineDayContent } from "@/app/utils/disciplineDayContent";
 import DisciplinaDayPageClient from "./DisciplinaDayPageClient";
+import DisciplinaDayUnavailable from "./DisciplinaDayUnavailable";
 
 export default async function DisciplinaDayPage({
   params,
@@ -21,5 +23,21 @@ export default async function DisciplinaDayPage({
     redirect("/");
   }
 
-  return <DisciplinaDayPageClient slug={slug} dayNumber={dayNum} />;
+  const result = await loadDisciplineDayContent(supabase, user.id, slug, dayNum);
+
+  if (!result.ok) {
+    if (result.kind === "not_found") {
+      return <DisciplinaDayUnavailable slug={slug} />;
+    }
+    throw new Error(`[disciplina day] ${result.message}`);
+  }
+
+  return (
+    <DisciplinaDayPageClient
+      slug={slug}
+      dayNumber={dayNum}
+      disciplineTitle={result.disciplineTitle}
+      segments={result.segments}
+    />
+  );
 }

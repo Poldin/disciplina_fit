@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import DayPageSkeleton from "./DayPageSkeleton";
 
-/** Mostrato durante la navigazione finché la shell server (solo auth) non è pronta. */
+/** Mostrato durante la navigazione finché il Server Component non ha finito (auth + contenuto giorno). */
 export default function DisciplinaDayLoading() {
   const params = useParams();
   const slugRaw = params.slug;
