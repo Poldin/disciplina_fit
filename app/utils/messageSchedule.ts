@@ -1,9 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import type { DayBlock } from '@/app/utils/dayBlockTypes';
 
 /** Messaggio nel notification_plan (time in formato "HH:mm") */
 export interface NotificationMessage {
   time: string;
   message: string;
+  blocks?: DayBlock[];
 }
 
 /** Struttura notification_plan: day_1, day_2, ... */
@@ -51,7 +53,7 @@ export async function populateMessageSchedule(
     send_time_utc: string;
     link_user_discipline_id: number;
     day_number: number;
-    metadata: { message: string };
+    metadata: { message: string; blocks?: DayBlock[] };
   }[] = [];
 
   // Domani a mezzanotte UTC
@@ -79,7 +81,10 @@ export async function populateMessageSchedule(
         send_time_utc: sendTime.toISOString(),
         link_user_discipline_id: linkUserDisciplineId,
         day_number: dayNum,
-        metadata: { message: msg.message },
+        metadata: {
+          message: msg.message,
+          ...(msg.blocks && msg.blocks.length > 0 ? { blocks: msg.blocks } : {}),
+        },
       });
     }
   }
