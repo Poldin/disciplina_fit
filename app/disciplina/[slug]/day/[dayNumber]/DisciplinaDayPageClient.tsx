@@ -39,15 +39,15 @@ export default function DisciplinaDayPageClient({
               className="text-center text-4xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums dark:text-zinc-50 sm:text-5xl md:text-6xl"
               aria-label={`Giorno ${dayNumber}`}
             >
-              GIORNO {dayNumber}
+              GIORNO #{dayNumber}
             </h1>
             {pathProgress ? (
               <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
                 {pathProgress.remaining > 0 ? (
                   pathProgress.remaining === 1 ? (
-                    <>Ti manca 1 giorno</>
+                    <>ti manca 1 giorno</>
                   ) : (
-                    <>Ti mancano {pathProgress.remaining} giorni</>
+                    <>ti mancano {pathProgress.remaining} giorni</>
                   )
                 ) : (
                   <>Percorso completato</>
