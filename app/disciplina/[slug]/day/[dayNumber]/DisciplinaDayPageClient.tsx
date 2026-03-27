@@ -62,7 +62,7 @@ export default function DisciplinaDayPageClient({
             Nessun testo per questo giorno.
           </p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-8">
             {segments.map((seg) => {
               const caption = messageScheduleCaption(
                 seg.isSent,
@@ -70,16 +70,17 @@ export default function DisciplinaDayPageClient({
                 seg.sentAt
               );
               return (
-                <div
-                  key={seg.id}
-                  className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/80 sm:p-6"
-                >
-                  {caption ? (
-                    <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">
-                      {caption}
-                    </p>
-                  ) : null}
-                  <DayMessagesMarkdown source={seg.text} />
+                <div key={seg.id} className="space-y-4">
+                  {/* Box messaggio */}
+                  <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/80 sm:p-6">
+                    {caption ? (
+                      <p className="mb-4 text-xs text-zinc-500 dark:text-zinc-400">
+                        {caption}
+                      </p>
+                    ) : null}
+                    <DayMessagesMarkdown source={seg.text} />
+                  </div>
+                  {/* Blocchi extra fuori dal box */}
                   <DayBlocks
                     messageScheduleId={seg.id}
                     blocks={seg.blocks}

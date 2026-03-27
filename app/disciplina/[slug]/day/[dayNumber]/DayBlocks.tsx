@@ -5,6 +5,7 @@ import type { DayBlock, BlockResponses } from "@/app/utils/dayBlockTypes";
 import YouTubeBlock from "./YouTubeBlock";
 import RatingBlock from "./RatingBlock";
 import TextInputBlock from "./TextInputBlock";
+import DayMessagesMarkdown from "./DayMessagesMarkdown";
 
 type Props = {
   messageScheduleId: string;
@@ -47,10 +48,14 @@ export default function DayBlocks({
   if (blocks.length === 0) return null;
 
   return (
-    <div className="mt-5 space-y-4 border-t border-zinc-100 pt-5 dark:border-zinc-800">
+    <div className="space-y-4 px-1 sm:px-0">
       {blocks.map((block, i) => {
         if (block.type === "youtube") {
           return <YouTubeBlock key={i} url={block.url} />;
+        }
+
+        if (block.type === "markdown") {
+          return <DayMessagesMarkdown key={i} source={block.content} />;
         }
 
         if (block.type === "rating") {

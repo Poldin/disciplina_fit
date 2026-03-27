@@ -3,6 +3,11 @@ export type YoutubeBlock = {
   url: string;
 };
 
+export type MarkdownBlock = {
+  type: "markdown";
+  content: string;
+};
+
 export type RatingBlock = {
   type: "rating";
   id: string;
@@ -16,6 +21,6 @@ export type TextInputBlock = {
   placeholder?: string;
 };
 
-export type DayBlock = YoutubeBlock | RatingBlock | TextInputBlock;
+export type DayBlock = YoutubeBlock | MarkdownBlock | RatingBlock | TextInputBlock;
 
 export type BlockResponses = Record<string, string | number>;
