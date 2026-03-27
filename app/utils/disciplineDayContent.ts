@@ -5,6 +5,7 @@ import {
   computeDayPagePathProgress,
   type DayPagePathProgress,
 } from "@/app/utils/disciplinePathProgress";
+import type { DayBlock, BlockResponses } from "@/app/utils/dayBlockTypes";
 
 export type DayContentSegment = {
   id: string;
@@ -12,6 +13,8 @@ export type DayContentSegment = {
   isSent: boolean;
   sendTimeUtc: string | null;
   sentAt: string | null;
+  blocks: DayBlock[];
+  responses: BlockResponses;
 };
 
 type ScheduleRow = {
@@ -100,7 +103,11 @@ export async function loadDisciplineDayContent(
 
   const segments = list
     .map((r) => {
-      const m = r.metadata as { message?: string } | null;
+      const m = r.metadata as {
+        message?: string;
+        blocks?: DayBlock[];
+        responses?: BlockResponses;
+      } | null;
       const text = m?.message?.trim() ?? "";
       return {
         id: r.id,
@@ -108,6 +115,8 @@ export async function loadDisciplineDayContent(
         isSent: Boolean(r.is_sent),
         sendTimeUtc: r.send_time_utc,
         sentAt: r.sent_at,
+        blocks: Array.isArray(m?.blocks) ? (m.blocks as DayBlock[]) : [],
+        responses: (m?.responses as BlockResponses) ?? {},
       };
     })
     .filter((s) => s.text.length > 0);

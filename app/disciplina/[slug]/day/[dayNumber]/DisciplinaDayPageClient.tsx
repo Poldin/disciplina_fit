@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import DayMessagesMarkdown from "./DayMessagesMarkdown";
+import DayBlocks from "./DayBlocks";
 import type { DayContentSegment } from "@/app/utils/disciplineDayContent";
 import type { DayPagePathProgress } from "@/app/utils/disciplinePathProgress";
 import { messageScheduleCaption } from "@/app/utils/messageScheduleCaption";
@@ -79,6 +80,11 @@ export default function DisciplinaDayPageClient({
                     </p>
                   ) : null}
                   <DayMessagesMarkdown source={seg.text} />
+                  <DayBlocks
+                    messageScheduleId={seg.id}
+                    blocks={seg.blocks}
+                    initialResponses={seg.responses}
+                  />
                 </div>
               );
             })}
