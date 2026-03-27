@@ -9,7 +9,7 @@ export default function DayPageSkeleton({
 }) {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
-      <div className="mx-auto max-w-2xl px-4 py-10 sm:py-14">
+      <div className="mx-auto max-w-2xl px-1 py-10 sm:py-14 sm:px-6 lg:px-8">
         <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-2">
           <Link
             href={`/disciplina/${encodeURIComponent(slug)}`}

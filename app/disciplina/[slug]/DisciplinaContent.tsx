@@ -214,7 +214,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       <Header onLoginClick={() => setIsLoginOpen(true)} />
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-4xl mx-auto px-1 sm:px-6 lg:px-8 py-12">
         {/* Back Link + Condividi */}
         <div className="flex items-center justify-between gap-4 mb-8">
           <Link
@@ -448,7 +448,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
                 onClick={handleConfirmStop}
                 className="flex-1 px-4 py-3 bg-zinc-700 hover:bg-zinc-600 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-200 dark:text-zinc-300 font-semibold rounded-lg transition-colors"
               >
-                Sì, blocca
+                Sì, interrompi
               </button>
             </div>
           </div>

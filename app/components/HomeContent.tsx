@@ -140,7 +140,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       {/* Disciplina attiva */}
       {user && subscriptionInfo?.hasAccess && activeDiscipline && (
         <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="max-w-7xl mx-auto px-1 sm:px-6 lg:px-8 py-4">
             <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-3">
               in corso
             </p>
@@ -233,7 +233,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       )}
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <main className="max-w-7xl mx-auto px-1 sm:px-6 lg:px-8 py-12">
         {/* Section Title */}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
