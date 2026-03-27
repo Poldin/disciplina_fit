@@ -10,18 +10,48 @@ type ScheduledMessageRow = {
   metadata: { message?: string } | null;
 };
 
+type DisciplineEmbed = {
+  slug: string;
+  title: string | null;
+  img_url: string | null;
+};
+
 type LinkRowRaw = {
   id: number;
   user_id: string | null;
   stopped_at: string | null;
-  disciplines: { slug: string } | { slug: string }[] | null;
+  disciplines: DisciplineEmbed | DisciplineEmbed[] | null;
 };
 
-function disciplineSlugFromLink(link: LinkRowRaw): string | null {
+function disciplineFromLink(link: LinkRowRaw): {
+  slug: string | null;
+  title: string | null;
+  imgUrl: string | null;
+} {
   const d = link.disciplines;
-  if (!d) return null;
-  if (Array.isArray(d)) return d[0]?.slug?.trim() ?? null;
-  return d.slug?.trim() ?? null;
+  if (!d) return { slug: null, title: null, imgUrl: null };
+  const row = Array.isArray(d) ? d[0] : d;
+  return {
+    slug: row?.slug?.trim() ?? null,
+    title: row?.title?.trim() ?? null,
+    imgUrl: row?.img_url?.trim() ?? null,
+  };
+}
+
+/**
+ * URL assoluto HTTPS per OneSignal (chrome_web_image richiede HTTPS).
+ * In produzione `disciplines.img_url` è di solito già un URL pubblico Storage Supabase
+ * (es. https://....supabase.co/storage/v1/object/public/.../file%20name.png);
+ * in quel caso resta invariato.
+ */
+function resolveHttpsImageUrl(baseUrl: string, imgUrl: string | null): string | undefined {
+  if (!imgUrl) return;
+  const t = imgUrl.trim();
+  if (!t) return;
+  if (t.startsWith('https://')) return t;
+  if (t.startsWith('//')) return `https:${t}`;
+  if (t.startsWith('/')) return `${baseUrl}${t}`;
+  return `${baseUrl}/${t}`;
 }
 
 export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
@@ -65,7 +95,7 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
 
   const { data: linkRows, error: linkError } = await supabaseAdmin
     .from('link_user_disciplines')
-    .select('id, user_id, stopped_at, disciplines(slug)')
+    .select('id, user_id, stopped_at, disciplines(slug, title, img_url)')
     .in('id', linkIds);
 
   if (linkError) {
@@ -99,7 +129,7 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     }
 
     const userId = link.user_id;
-    const slug = disciplineSlugFromLink(link);
+    const { slug, title: disciplineTitle, imgUrl: disciplineImgUrl } = disciplineFromLink(link);
     const dayNum =
       msg.day_number != null ? Number(msg.day_number) : NaN;
     const openUrl =
@@ -114,11 +144,22 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
       continue;
     }
 
+    const pushTitle = disciplineTitle || undefined;
+    const chromeWebImage = resolveHttpsImageUrl(baseUrl, disciplineImgUrl);
+
     try {
       console.log(
-        `[sendScheduledMessages] push message=${msg.id} userId=${userId} linkId=${linkId} sendTimeUtc=${msg.send_time_utc} url=${openUrl ?? 'none'}`
+        `[sendScheduledMessages] push message=${msg.id} userId=${userId} linkId=${linkId} sendTimeUtc=${msg.send_time_utc} url=${openUrl ?? 'none'} title=${pushTitle ?? 'default'} image=${chromeWebImage ?? 'none'}`
       );
-      const result = await sendPushToExternalUser(userId, body, undefined, { url: openUrl });
+      const result = await sendPushToExternalUser(userId, body, pushTitle, {
+        url: openUrl,
+        ...(chromeWebImage ? { chromeWebImage } : {}),
+        ...(openUrl
+          ? {
+              webButtons: [{ id: 'open_content', text: 'Apri', url: openUrl }],
+            }
+          : {}),
+      });
       if (!result.ok) {
         failed += 1;
         console.warn(`[sendScheduledMessages] push failed message=${msg.id} userId=${userId}: ${result.reason}`);

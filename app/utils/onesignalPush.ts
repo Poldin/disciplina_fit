@@ -22,9 +22,26 @@ function getOneSignalServerConfig(): { appId: string; apiKey: string } {
   return { appId: appId.trim(), apiKey: apiKey.trim() };
 }
 
+/** CTA su Chrome Web Push: max 2 voci (campo API `web_buttons`). */
+export type WebPushButton = {
+  id: string;
+  text: string;
+  url: string;
+};
+
 export type SendPushOptions = {
   /** URL assoluto aperto al tap (web / PWA) */
   url?: string;
+  /**
+   * Immagine espansa su Chrome / Chromium (Web Push). Deve essere URL HTTPS pubblico.
+   * @see https://documentation.onesignal.com/reference/push-notification#body-chrome-web-image
+   */
+  chromeWebImage?: string;
+  /**
+   * Pulsanti azione (max 2) solo su Chrome Web Push.
+   * @see https://documentation.onesignal.com/reference/push-notification#body-web-buttons
+   */
+  webButtons?: WebPushButton[];
 };
 
 /**
@@ -52,6 +69,23 @@ export async function sendPushToExternalUser(
   const openUrl = options?.url?.trim();
   if (openUrl) {
     payload.url = openUrl;
+  }
+  const webImage = options?.chromeWebImage?.trim();
+  if (webImage?.startsWith('https://')) {
+    payload.chrome_web_image = webImage;
+  }
+
+  const rawButtons = options?.webButtons ?? [];
+  const webButtons = rawButtons
+    .map((b) => ({
+      id: b.id?.trim() ?? '',
+      text: b.text?.trim() ?? '',
+      url: b.url?.trim() ?? '',
+    }))
+    .filter((b) => b.id && b.text && b.url.startsWith('https://'))
+    .slice(0, 2);
+  if (webButtons.length > 0) {
+    payload.web_buttons = webButtons;
   }
 
   const response = await fetch(ONESIGNAL_NOTIFICATIONS_URL, {
