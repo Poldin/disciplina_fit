@@ -240,7 +240,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
             Prenditi cura di te, con disciplina.
           </h2>
           <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-2">
-            Prendersi cura di sé, del proprio equilibrio fisico, richiede scelte da perseguire nel tempo con disciplina.
+            Prendersi cura di sé, del proprio equilibrio, richiede scelte da perseguire nel tempo con disciplina.
           </p>
           <p className="text-lg text-zinc-600 dark:text-zinc-400">
             Scegli la disciplina che risuona in te e trasforma i tuoi obiettivi in abitudini quotidiane. Non mollare!
