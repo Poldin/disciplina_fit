@@ -27,7 +27,7 @@ export default async function DisciplinaDayPage({
 
   if (!result.ok) {
     if (result.kind === "not_found") {
-      return <DisciplinaDayUnavailable slug={slug} />;
+      return <DisciplinaDayUnavailable slug={slug} dayNumber={dayNum} />;
     }
     throw new Error(`[disciplina day] ${result.message}`);
   }

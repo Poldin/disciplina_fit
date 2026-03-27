@@ -2,13 +2,21 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/app/utils/supabase/admin";
 import { markDayNotificationOpened } from "@/app/utils/markDayNotificationOpened";
 
-export type DayContentSegment = { id: string; text: string };
+export type DayContentSegment = {
+  id: string;
+  text: string;
+  isSent: boolean;
+  sendTimeUtc: string | null;
+  sentAt: string | null;
+};
 
 type ScheduleRow = {
   id: string;
   day_number: number | null;
   metadata: unknown;
   send_time_utc: string | null;
+  is_sent: boolean | null;
+  sent_at: string | null;
 };
 
 export type LoadDisciplineDayContentResult =
@@ -50,7 +58,7 @@ export async function loadDisciplineDayContent(
 
   const { data: rows, error } = await admin
     .from("message_schedule")
-    .select("id, day_number, metadata, send_time_utc")
+    .select("id, day_number, metadata, send_time_utc, is_sent, sent_at")
     .eq("link_user_discipline_id", link.id)
     .eq("day_number", dayNum)
     .order("send_time_utc", { ascending: true });
@@ -72,7 +80,13 @@ export async function loadDisciplineDayContent(
     .map((r) => {
       const m = r.metadata as { message?: string } | null;
       const text = m?.message?.trim() ?? "";
-      return { id: r.id, text };
+      return {
+        id: r.id,
+        text,
+        isSent: Boolean(r.is_sent),
+        sendTimeUtc: r.send_time_utc,
+        sentAt: r.sent_at,
+      };
     })
     .filter((s) => s.text.length > 0);
 
