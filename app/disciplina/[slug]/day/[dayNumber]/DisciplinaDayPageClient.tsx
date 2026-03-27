@@ -26,7 +26,7 @@ export default function DisciplinaDayPageClient({
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
       <div className="mx-auto max-w-2xl px-1 py-10 sm:py-14 sm:px-6 lg:px-8">
-        <header className="mb-10 flex flex-col gap-6 sm:mb-12 sm:gap-8">
+        <header className="mb-6 flex flex-col gap-6 sm:mb-12 sm:gap-8">
           <Link
             href={`/disciplina/${encodeURIComponent(slug)}`}
             className="self-start text-base font-semibold leading-snug tracking-tight text-zinc-700 underline-offset-4 hover:underline dark:text-zinc-300 sm:text-lg"
@@ -46,7 +46,7 @@ export default function DisciplinaDayPageClient({
                 pathProgress.remaining === 1 ? (
                   <>Ti manca 1 giorno</>
                 ) : (
-                  <>Ti mancano {pathProgress.remaining} giorni</>
+                  <>ti mancano {pathProgress.remaining} giorni</>
                 )
               ) : (
                 <>Percorso completato</>
