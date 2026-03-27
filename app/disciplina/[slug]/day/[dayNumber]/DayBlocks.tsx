@@ -6,6 +6,7 @@ import YouTubeBlock from "./YouTubeBlock";
 import RatingBlock from "./RatingBlock";
 import TextInputBlock from "./TextInputBlock";
 import DayMessagesMarkdown from "./DayMessagesMarkdown";
+import LinkPreviewBlock from "./LinkPreviewBlock";
 
 type Props = {
   messageScheduleId: string;
@@ -56,6 +57,10 @@ export default function DayBlocks({
 
         if (block.type === "markdown") {
           return <DayMessagesMarkdown key={i} source={block.content} />;
+        }
+
+        if (block.type === "link_preview") {
+          return <LinkPreviewBlock key={i} url={block.url} />;
         }
 
         if (block.type === "rating") {

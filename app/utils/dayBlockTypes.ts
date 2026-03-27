@@ -21,6 +21,11 @@ export type TextInputBlock = {
   placeholder?: string;
 };
 
-export type DayBlock = YoutubeBlock | MarkdownBlock | RatingBlock | TextInputBlock;
+export type LinkPreviewBlock = {
+  type: "link_preview";
+  url: string;
+};
+
+export type DayBlock = YoutubeBlock | MarkdownBlock | RatingBlock | TextInputBlock | LinkPreviewBlock;
 
 export type BlockResponses = Record<string, string | number>;

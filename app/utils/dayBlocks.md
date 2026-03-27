@@ -104,6 +104,25 @@ Textarea con pulsante "Salva" che appare quando il contenuto è stato modificato
 
 ---
 
+### `link_preview` — Anteprima link
+
+Mostra una card cliccabile con immagine, titolo e descrizione estratti dai tag Open Graph della pagina. Durante il caricamento mostra uno skeleton animato. Se il sito non ha tag OG o il fetch fallisce, mostra il link testuale come fallback.
+
+```json
+{
+  "type": "link_preview",
+  "url": "https://www.example.com/articolo"
+}
+```
+
+| Campo | Tipo   | Obbligatorio | Note |
+|-------|--------|:------------:|------|
+| `url` | string | ✅ | URL completo con `https://` |
+
+> La qualità dell'anteprima dipende dai tag Open Graph del sito di destinazione. Siti come YouTube, Wikipedia e blog di settore li hanno quasi sempre. La risposta viene cachata 1 ora nel browser.
+
+---
+
 ## Sintassi Markdown
 
 Usata nel campo `content` del blocco `markdown` (e nel campo `message`).
@@ -186,6 +205,10 @@ def saluta(nome):
     {
       "type": "markdown",
       "content": "# Il momento della svolta\n\n## Perché il giorno 3 è il più difficile\n\nIl tuo corpo ha esaurito le riserve di glicogeno e sta imparando a usare i grassi come carburante. Questo processo si chiama **adattamento metabolico**.\n\n### Cosa succede dentro di te\n\n- 🔥 Il metabolismo si sta **riorganizzando**\n- 🧠 Il cervello cerca ancora zucchero — è normale sentirsi stanchi\n- 💧 Stai perdendo acqua in eccesso: **idratati bene**\n\n1. Bevi almeno 2 litri d'acqua\n2. Fai 10 minuti di camminata leggera\n3. Dormi almeno 7 ore\n\n> *\"Il momento in cui vuoi mollare è esattamente il momento in cui devi continuare.\"*\n\n---\n\n#### Confronto energetico\n\n| Fonte | Disponibilità | Durata |\n|-------|:-------------:|--------|\n| Glicogeno | ~~Alta~~ Esaurita | Breve |\n| Grassi | Alta | Lunga |\n| Proteine | Bassa | Emergenza |\n\n---\n\nUn esempio di routine mattutina:\n\n```\n07:00 — Bicchiere d'acqua a digiuno\n07:15 — 10 min stretching\n07:30 — Colazione proteica\n```\n\nDomani sarà già diverso. ~~Il peggio è passato~~ **Il meglio sta arrivando**. 🙌"
+    },
+    {
+      "type": "link_preview",
+      "url": "https://www.healthline.com/nutrition/ketosis"
     },
     {
       "type": "rating",
