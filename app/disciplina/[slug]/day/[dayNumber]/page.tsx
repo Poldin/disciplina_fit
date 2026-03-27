@@ -23,7 +23,10 @@ export default async function DisciplinaDayPage({
     redirect("/");
   }
 
-  const result = await loadDisciplineDayContent(supabase, user.id, slug, dayNum);
+  const [result, profileResult] = await Promise.all([
+    loadDisciplineDayContent(supabase, user.id, slug, dayNum),
+    supabase.from("profiles").select("user_name").eq("id", user.id).maybeSingle(),
+  ]);
 
   if (!result.ok) {
     if (result.kind === "not_found") {
@@ -32,6 +35,8 @@ export default async function DisciplinaDayPage({
     throw new Error(`[disciplina day] ${result.message}`);
   }
 
+  const userName = profileResult.data?.user_name ?? null;
+
   return (
     <DisciplinaDayPageClient
       slug={slug}
@@ -39,6 +44,7 @@ export default async function DisciplinaDayPage({
       disciplineTitle={result.disciplineTitle}
       segments={result.segments}
       pathProgress={result.pathProgress}
+      userName={userName}
     />
   );
 }

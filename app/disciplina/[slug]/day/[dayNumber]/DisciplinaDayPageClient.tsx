@@ -13,6 +13,7 @@ type Props = {
   disciplineTitle: string | null;
   segments: DayContentSegment[];
   pathProgress: DayPagePathProgress | null;
+  userName: string | null;
 };
 
 export default function DisciplinaDayPageClient({
@@ -21,6 +22,7 @@ export default function DisciplinaDayPageClient({
   disciplineTitle,
   segments,
   pathProgress,
+  userName,
 }: Props) {
   const backLabel = disciplineTitle ?? slug;
 
@@ -45,12 +47,21 @@ export default function DisciplinaDayPageClient({
               <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
                 {pathProgress.remaining > 0 ? (
                   pathProgress.remaining === 1 ? (
-                    <>ti manca 1 giorno</>
+                    <>
+                      ti manca 1 giorno
+                      {userName ? `, ${userName}` : ""}
+                    </>
                   ) : (
-                    <>ti mancano {pathProgress.remaining} giorni</>
+                    <>
+                      ti mancano {pathProgress.remaining} giorni
+                      {userName ? `, ${userName}` : ""}
+                    </>
                   )
                 ) : (
-                  <>Percorso completato</>
+                  <>
+                    Percorso completato
+                    {userName ? `, ${userName}` : ""}
+                  </>
                 )}
               </p>
             ) : null}
