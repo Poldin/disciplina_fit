@@ -3,6 +3,7 @@
 import Link from "next/link";
 import DayMessagesMarkdown from "./DayMessagesMarkdown";
 import type { DayContentSegment } from "@/app/utils/disciplineDayContent";
+import type { DayPagePathProgress } from "@/app/utils/disciplinePathProgress";
 import { messageScheduleCaption } from "@/app/utils/messageScheduleCaption";
 
 type Props = {
@@ -10,6 +11,7 @@ type Props = {
   dayNumber: number;
   disciplineTitle: string | null;
   segments: DayContentSegment[];
+  pathProgress: DayPagePathProgress | null;
 };
 
 export default function DisciplinaDayPageClient({
@@ -17,6 +19,7 @@ export default function DisciplinaDayPageClient({
   dayNumber,
   disciplineTitle,
   segments,
+  pathProgress,
 }: Props) {
   const backLabel = disciplineTitle ?? slug;
 
@@ -36,6 +39,57 @@ export default function DisciplinaDayPageClient({
           >
             GIORNO {dayNumber}
           </h1>
+
+          {pathProgress ? (
+            <div className="space-y-2">
+              <div className="flex flex-col gap-1.5 text-xs sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-6 sm:gap-y-1">
+                <p className="text-zinc-600 dark:text-zinc-400">
+                  <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                    {pathProgress.completed}
+                  </span>
+                  {" di "}
+                  <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                    {pathProgress.total}
+                  </span>
+                  {" giorni con invio effettuato"}
+                </p>
+                <p className="text-zinc-500 dark:text-zinc-500">
+                  {pathProgress.currentOrdinal != null ? (
+                    <>
+                      Questo giorno:{" "}
+                      <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                        {pathProgress.currentOrdinal}
+                      </span>
+                      {" di "}
+                      <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                        {pathProgress.total}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Giorno {dayNumber}
+                      {" · "}
+                      {pathProgress.total} passi nel percorso
+                    </>
+                  )}
+                </p>
+              </div>
+              <div
+                className="relative h-2 w-full rounded-full"
+                aria-hidden
+              >
+                <div className="absolute inset-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+                <div
+                  className="absolute left-0 top-0 h-2 rounded-full bg-emerald-500 dark:bg-emerald-500"
+                  style={{ width: `${pathProgress.completedPct}%` }}
+                />
+                <div
+                  className="absolute top-1/2 z-10 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white dark:bg-white"
+                  style={{ left: `${pathProgress.markerPct}%` }}
+                />
+              </div>
+            </div>
+          ) : null}
         </header>
 
         {segments.length === 0 ? (
