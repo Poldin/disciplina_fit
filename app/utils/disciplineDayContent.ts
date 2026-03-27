@@ -125,8 +125,7 @@ export async function loadDisciplineDayContent(
   const pathProgress = computeDayPagePathProgress(
     discipline.notification_plan,
     discipline.lenght_days,
-    sentDayNumbers,
-    dayNum
+    sentDayNumbers
   );
 
   return {

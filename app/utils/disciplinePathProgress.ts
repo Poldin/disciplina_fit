@@ -1,13 +1,10 @@
 import { listNotificationPlanDayPreviews } from "@/app/utils/notificationPlanDisplay";
 
-/** Dati per la barra sotto al titolo giorno: emerald = sbloccati, pallino = posizione giorno corrente. */
+/** Dati per la barra sotto al titolo giorno (emerald = giorni con invio effettuato, come la home). */
 export type DayPagePathProgress = {
   completed: number;
   total: number;
   completedPct: number;
-  markerPct: number;
-  /** 1-based: questo giorno è l’N-esimo step del percorso (stesso ordinamento della home). */
-  currentOrdinal: number | null;
 };
 
 function normalizeLengthDays(
@@ -21,8 +18,7 @@ function normalizeLengthDays(
 export function computeDayPagePathProgress(
   notificationPlan: unknown,
   lenghtDays: number | string | null | undefined,
-  sentDayNumbers: number[],
-  currentDayNumber: number
+  sentDayNumbers: number[]
 ): DayPagePathProgress | null {
   const planDays = listNotificationPlanDayPreviews(notificationPlan);
   const len = normalizeLengthDays(lenghtDays);
@@ -40,25 +36,5 @@ export function computeDayPagePathProgress(
   const total = segmentDayNumbers.length;
   const completedPct = Math.min(100, Math.round((completed / total) * 100));
 
-  const idx = segmentDayNumbers.indexOf(currentDayNumber);
-  const currentOrdinal = idx >= 0 ? idx + 1 : null;
-
-  let markerPct: number;
-  if (idx >= 0) {
-    markerPct = ((idx + 0.5) / total) * 100;
-  } else {
-    const maxD = Math.max(...segmentDayNumbers);
-    const minD = Math.min(...segmentDayNumbers);
-    if (currentDayNumber <= minD) markerPct = (0.5 / total) * 100;
-    else if (currentDayNumber >= maxD) markerPct = 100 - (0.5 / total) * 100;
-    else
-      markerPct = Math.min(
-        100,
-        Math.max(0, ((currentDayNumber - minD) / (maxD - minD)) * 100)
-      );
-  }
-
-  markerPct = Math.min(100, Math.max(0, markerPct));
-
-  return { completed, total, completedPct, markerPct, currentOrdinal };
+  return { completed, total, completedPct };
 }

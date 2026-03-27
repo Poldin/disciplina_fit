@@ -42,57 +42,17 @@ export default function DisciplinaDayPageClient({
 
           {pathProgress ? (
             <div
-              className="space-y-2 overflow-visible"
-              role="group"
-              aria-label={
-                pathProgress.currentOrdinal != null
-                  ? `Avanzamento: ${pathProgress.completed} su ${pathProgress.total} giorni con invio effettuato. Questo giorno è il ${pathProgress.currentOrdinal}-esimo passo su ${pathProgress.total}.`
-                  : `Avanzamento: ${pathProgress.completed} su ${pathProgress.total} giorni con invio effettuato. Giorno ${dayNumber} rispetto a ${pathProgress.total} passi nel percorso.`
-              }
+              className="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={pathProgress.completedPct}
+              aria-label={`${pathProgress.completed} su ${pathProgress.total} giorni con invio effettuato`}
             >
-              <div className="flex flex-col gap-1.5 text-xs sm:flex-row sm:flex-wrap sm:items-baseline sm:justify-between sm:gap-x-6 sm:gap-y-1">
-                <p className="text-zinc-600 dark:text-zinc-400">
-                  <span className="font-medium text-emerald-700 dark:text-emerald-400">
-                    {pathProgress.completed}
-                  </span>
-                  {" di "}
-                  <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                    {pathProgress.total}
-                  </span>
-                  {" giorni con invio effettuato"}
-                </p>
-                <p className="text-zinc-500 dark:text-zinc-500">
-                  {pathProgress.currentOrdinal != null ? (
-                    <>
-                      Questo giorno:{" "}
-                      <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                        {pathProgress.currentOrdinal}
-                      </span>
-                      {" di "}
-                      <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                        {pathProgress.total}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      Giorno {dayNumber}
-                      {" · "}
-                      {pathProgress.total} passi nel percorso
-                    </>
-                  )}
-                </p>
-              </div>
-              <div className="relative h-2 w-full">
-                <div className="absolute inset-0 rounded-full bg-zinc-200 dark:bg-zinc-700" />
-                <div
-                  className="absolute left-0 top-0 h-2 rounded-full bg-emerald-500 dark:bg-emerald-500"
-                  style={{ width: `${pathProgress.completedPct}%` }}
-                />
-                <div
-                  className="absolute top-1/2 z-10 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white dark:bg-white"
-                  style={{ left: `${pathProgress.markerPct}%` }}
-                />
-              </div>
+              <div
+                className="h-full rounded-full bg-emerald-500 dark:bg-emerald-500 transition-[width] duration-300 ease-out"
+                style={{ width: `${pathProgress.completedPct}%` }}
+              />
             </div>
           ) : null}
         </header>
