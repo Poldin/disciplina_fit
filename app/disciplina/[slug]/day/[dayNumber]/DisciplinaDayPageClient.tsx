@@ -41,19 +41,17 @@ export default function DisciplinaDayPageClient({
           </h1>
 
           {pathProgress ? (
-            <div
-              className="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-700 overflow-hidden"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={pathProgress.completedPct}
-              aria-label={`${pathProgress.completed} su ${pathProgress.total} giorni con invio effettuato`}
-            >
-              <div
-                className="h-full rounded-full bg-emerald-500 dark:bg-emerald-500 transition-[width] duration-300 ease-out"
-                style={{ width: `${pathProgress.completedPct}%` }}
-              />
-            </div>
+            <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
+              {pathProgress.remaining > 0 ? (
+                pathProgress.remaining === 1 ? (
+                  <>Ti manca 1 giorno</>
+                ) : (
+                  <>Ti mancano {pathProgress.remaining} giorni</>
+                )
+              ) : (
+                <>Percorso completato</>
+              )}
+            </p>
           ) : null}
         </header>
 

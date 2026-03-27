@@ -1,10 +1,8 @@
 import { listNotificationPlanDayPreviews } from "@/app/utils/notificationPlanDisplay";
 
-/** Dati per la barra sotto al titolo giorno (emerald = giorni con invio effettuato, come la home). */
+/** Giorni ancora da “sbloccare” (invio effettuato) rispetto al piano, come sulla home. */
 export type DayPagePathProgress = {
-  completed: number;
-  total: number;
-  completedPct: number;
+  remaining: number;
 };
 
 function normalizeLengthDays(
@@ -34,7 +32,7 @@ export function computeDayPagePathProgress(
   const sent = new Set(sentDayNumbers);
   const completed = segmentDayNumbers.filter((d) => sent.has(d)).length;
   const total = segmentDayNumbers.length;
-  const completedPct = Math.min(100, Math.round((completed / total) * 100));
+  const remaining = Math.max(0, total - completed);
 
-  return { completed, total, completedPct };
+  return { remaining };
 }

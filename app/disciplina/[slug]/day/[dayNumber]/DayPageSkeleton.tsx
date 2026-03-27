@@ -24,11 +24,9 @@ export default function DayPageSkeleton({
             GIORNO {dayNumber}
           </div>
           <div
-            className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700"
+            className="mx-auto h-3 w-48 max-w-[90%] animate-pulse rounded bg-zinc-200 dark:bg-zinc-800"
             aria-hidden
-          >
-            <div className="h-full w-1/3 rounded-full bg-emerald-500 dark:bg-emerald-500" />
-          </div>
+          />
         </header>
         <div className="space-y-4" aria-hidden>
           {[0, 1].map((i) => (
