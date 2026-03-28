@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/app/utils/supabase/admin';
 import { sendPushToExternalUser } from '@/app/utils/onesignalPush';
 import { getPublicSiteUrl } from '@/app/utils/publicSiteUrl';
+import { sendDisciplineReminderEmail } from '@/app/utils/sendDisciplineReminderEmail';
 
 type ScheduledMessageRow = {
   id: string;
@@ -81,6 +82,8 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
       sent: 0,
       failed: 0,
       markedSent: 0,
+      emailsSent: 0,
+      emailSendErrors: 0,
       message: 'No pending scheduled messages',
     };
   }
@@ -109,6 +112,8 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
 
   const successfullySentIds: string[] = [];
   let failed = 0;
+  let emailsSent = 0;
+  let emailSendErrors = 0;
 
   for (const msg of messages) {
     const linkId = msg.link_user_discipline_id;
@@ -167,6 +172,45 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
       }
       console.log(`[sendScheduledMessages] sent message=${msg.id} onesignalId=${result.messageId}`);
       successfullySentIds.push(msg.id);
+
+      // Backup email (Resend): solo dopo push ok; errori mail non influenzano is_sent né `failed`
+      try {
+        const { data: authData, error: authErr } =
+          await supabaseAdmin.auth.admin.getUserById(userId);
+        const userEmail = authData?.user?.email?.trim();
+        if (authErr || !userEmail) {
+          console.warn(
+            `[sendScheduledMessages] backup email skipped message=${msg.id} userId=${userId} reason=${authErr?.message ?? 'no email on account'}`
+          );
+        } else {
+          const dayLabel =
+            Number.isFinite(dayNum) && dayNum >= 1 ? ` · giorno ${dayNum}` : '';
+          const subjectBase = disciplineTitle?.trim() || 'disciplinaFIT';
+          const emailResult = await sendDisciplineReminderEmail({
+            to: userEmail,
+            subject: `${subjectBase}${dayLabel}`,
+            disciplineTitle: disciplineTitle || 'disciplinaFIT',
+            bodyText: body,
+            openUrl,
+            heroImageUrl: chromeWebImage,
+          });
+          if (emailResult.ok) {
+            emailsSent += 1;
+            console.log(`[sendScheduledMessages] backup email sent message=${msg.id} to=${userEmail}`);
+          } else {
+            emailSendErrors += 1;
+            console.warn(
+              `[sendScheduledMessages] backup email failed message=${msg.id}: ${emailResult.reason}`
+            );
+          }
+        }
+      } catch (emailErr) {
+        emailSendErrors += 1;
+        console.warn(
+          `[sendScheduledMessages] backup email exception message=${msg.id}`,
+          emailErr
+        );
+      }
     } catch (err) {
       failed += 1;
       console.error(`[sendScheduledMessages] failed message=${msg.id} userId=${userId}`, err);
@@ -195,6 +239,8 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     sent: successfullySentIds.length,
     failed,
     markedSent,
+    emailsSent,
+    emailSendErrors,
     nowUtc: nowIso,
   };
 
