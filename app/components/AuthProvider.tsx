@@ -112,35 +112,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [user, fetchProfile]);
 
   useEffect(() => {
-    // Recupera sessione iniziale
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-      if (user) {
-        fetchSubscription(user.id);
-        fetchProfile(user.id);
+    const applySession = async (nextUser: User | null) => {
+      setUser(nextUser);
+      if (nextUser) {
+        await Promise.all([
+          fetchSubscription(nextUser.id),
+          fetchProfile(nextUser.id),
+        ]);
       } else {
         setSubscription("none");
         setSubscriptionInfo(buildSubscriptionInfo(null));
         setUserName(null);
       }
       setLoading(false);
+    };
+
+    void supabase.auth.getUser().then(({ data: { user } }) => {
+      void applySession(user ?? null);
     });
 
-    // Ascolta i cambiamenti di autenticazione
     const {
       data: { subscription: authSub },
-    } =     supabase.auth.onAuthStateChange((_event, session) => {
-      const newUser = session?.user ?? null;
-      setUser(newUser);
-      if (newUser) {
-        fetchSubscription(newUser.id);
-        fetchProfile(newUser.id);
-      } else {
-        setSubscription("none");
-        setSubscriptionInfo(buildSubscriptionInfo(null));
-        setUserName(null);
-      }
-      setLoading(false);
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void applySession(session?.user ?? null);
     });
 
     return () => authSub.unsubscribe();
