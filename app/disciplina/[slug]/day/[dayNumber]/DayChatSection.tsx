@@ -40,6 +40,50 @@ const iconBtn =
 const iconBtnGray = `${iconBtn} text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-100`;
 const iconBtnRed = `${iconBtn} text-zinc-400 hover:text-red-500 dark:hover:text-red-400`;
 
+function EditBox({
+  id,
+  rows = 3,
+  value,
+  onChange,
+  onSave,
+  onCancel,
+}: {
+  id: string;
+  rows?: number;
+  value: string;
+  onChange: (val: string) => void;
+  onSave: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="mt-1 space-y-2">
+      <textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); onSave(); }
+          if (e.key === "Escape") onCancel();
+        }}
+        rows={rows}
+        autoFocus
+        className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 resize-none focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+      />
+      <div className="flex gap-2 justify-end">
+        <button onClick={onCancel} className={iconBtnGray}>
+          <X size={16} /><span className="text-sm">Annulla</span>
+        </button>
+        <button
+          onClick={onSave}
+          disabled={!value.trim()}
+          className={`${iconBtn} px-3 py-1 rounded-md bg-zinc-900 dark:bg-zinc-100 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300`}
+        >
+          <Check size={15} /><span>Salva</span>
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function DayChatSection({ disciplineId, dayNumber }: Props) {
   const { user, userName: currentUserName } = useAuth();
 
@@ -55,6 +99,7 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editContent, setEditContent] = useState<Record<string, string>>({});
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [animatingLikes, setAnimatingLikes] = useState<Record<string, boolean>>({});
   const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
   const [reportReason, setReportReason] = useState("");
   const [submittingReport, setSubmittingReport] = useState(false);
@@ -142,6 +187,13 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
         likedByMe: !current.likedByMe,
       },
     }));
+    if (!current.likedByMe) {
+      setAnimatingLikes((prev) => ({ ...prev, [messageId]: true }));
+      setTimeout(
+        () => setAnimatingLikes((prev) => ({ ...prev, [messageId]: false })),
+        500
+      );
+    }
     const supabase = createClient();
     if (current.likedByMe) {
       await supabase.from("day_chat_likes").delete().eq("message_id", messageId).eq("user_id", user.id);
@@ -266,45 +318,31 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
 
   const LikeButton = ({ messageId }: { messageId: string }) => {
     const { count, likedByMe } = likes[messageId] ?? { count: 0, likedByMe: false };
+    const isAnimating = animatingLikes[messageId] ?? false;
     return (
       <button
         onClick={() => void toggleLike(messageId)}
         title={likedByMe ? "Rimuovi like" : "Metti like"}
         className={`${iconBtn} ${likedByMe ? "text-red-400 hover:text-red-500" : iconBtnGray}`}
       >
-        <Heart size={17} fill={likedByMe ? "currentColor" : "none"} strokeWidth={likedByMe ? 0 : 1.8} />
-        {count > 0 && <span className="text-sm">{count}</span>}
+        <span
+          style={
+            isAnimating
+              ? { animation: "like-pop 0.45s cubic-bezier(0.36,0.07,0.19,0.97) both" }
+              : undefined
+          }
+          className="inline-flex"
+        >
+          <Heart
+            size={24}
+            fill={likedByMe ? "currentColor" : "none"}
+            strokeWidth={likedByMe ? 0 : 1.8}
+          />
+        </span>
+        {count > 0 && <span className="text-sm font-medium">{count}</span>}
       </button>
     );
   };
-
-  const EditBox = ({ id, rows = 3 }: { id: string; rows?: number }) => (
-    <div className="mt-1 space-y-2">
-      <textarea
-        value={editContent[id] ?? ""}
-        onChange={(e) => setEditContent((prev) => ({ ...prev, [id]: e.target.value }))}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void saveEdit(id); }
-          if (e.key === "Escape") cancelEdit();
-        }}
-        rows={rows}
-        autoFocus
-        className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 resize-none focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
-      />
-      <div className="flex gap-2 justify-end">
-        <button onClick={cancelEdit} className={iconBtnGray}>
-          <X size={16} /><span className="text-sm">Annulla</span>
-        </button>
-        <button
-          onClick={() => void saveEdit(id)}
-          disabled={!editContent[id]?.trim()}
-          className={`${iconBtn} px-3 py-1 rounded-md bg-zinc-900 dark:bg-zinc-100 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300`}
-        >
-          <Check size={15} /><span>Salva</span>
-        </button>
-      </div>
-    </div>
-  );
 
   const ThreeDotsMenu = ({
     msgId,
@@ -367,6 +405,16 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
 
   return (
     <section className="mt-12">
+      <style>{`
+        @keyframes like-pop {
+          0%   { transform: scale(1) rotate(0deg); }
+          20%  { transform: scale(1.55) rotate(-12deg); }
+          45%  { transform: scale(0.88) rotate(6deg); }
+          65%  { transform: scale(1.2) rotate(-4deg); }
+          80%  { transform: scale(0.96) rotate(2deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+      `}</style>
       <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
         Commenti
       </h2>
@@ -416,7 +464,14 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
 
                       {/* Content or edit box */}
                       {isEditing ? (
-                        <EditBox id={msg.id} rows={3} />
+                        <EditBox
+                          id={msg.id}
+                          rows={3}
+                          value={editContent[msg.id] ?? ""}
+                          onChange={(val) => setEditContent((prev) => ({ ...prev, [msg.id]: val }))}
+                          onSave={() => void saveEdit(msg.id)}
+                          onCancel={cancelEdit}
+                        />
                       ) : (
                         <>
                           <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
@@ -475,7 +530,14 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
                               </div>
 
                               {isReplyEditing ? (
-                                <EditBox id={reply.id} rows={2} />
+                                <EditBox
+                                  id={reply.id}
+                                  rows={2}
+                                  value={editContent[reply.id] ?? ""}
+                                  onChange={(val) => setEditContent((prev) => ({ ...prev, [reply.id]: val }))}
+                                  onSave={() => void saveEdit(reply.id)}
+                                  onCancel={cancelEdit}
+                                />
                               ) : (
                                 <>
                                   <p className="mt-0.5 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
