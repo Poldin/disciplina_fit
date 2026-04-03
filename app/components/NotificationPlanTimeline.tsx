@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/app/components/AuthProvider";
+import { createClient } from "@/app/utils/supabase/client";
 import { listNotificationPlanDayPreviews } from "@/app/utils/notificationPlanDisplay";
 
 type Props = {
@@ -25,6 +26,7 @@ export default function NotificationPlanTimeline({
     [notificationPlan]
   );
   const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
+  const [commentCounts, setCommentCounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
     if (!user || !joined) {
@@ -46,6 +48,27 @@ export default function NotificationPlanTimeline({
       cancelled = true;
     };
   }, [user, joined, disciplineId]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const supabase = createClient();
+    void supabase
+      .from("day_chat_messages")
+      .select("day_number")
+      .eq("discipline_id", disciplineId)
+      .then(({ data }) => {
+        if (cancelled || !data) return;
+        const counts: Record<number, number> = {};
+        for (const row of data) {
+          const n = Number(row.day_number);
+          counts[n] = (counts[n] ?? 0) + 1;
+        }
+        setCommentCounts(counts);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [disciplineId]);
 
   if (days.length === 0) return null;
 
@@ -110,6 +133,11 @@ export default function NotificationPlanTimeline({
                   {!open && (
                     <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
                       Si apre dopo il primo invio del giorno
+                    </p>
+                  )}
+                  {(commentCounts[dayNumber] ?? 0) > 0 && (
+                    <p className="mt-1.5 text-xs text-zinc-400 dark:text-zinc-500">
+                      commenti {commentCounts[dayNumber]}
                     </p>
                   )}
                 </div>
