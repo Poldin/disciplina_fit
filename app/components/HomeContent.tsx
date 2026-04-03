@@ -9,6 +9,7 @@ import { useAuth } from "./AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
 import { listNotificationPlanDayPreviews } from "@/app/utils/notificationPlanDisplay";
 import type { Discipline } from "@/app/utils/types";
+import { isSubscriptionRequired } from "@/app/utils/subscriptionRequired";
 
 interface HomeContentProps {
   disciplines: Discipline[];
@@ -248,7 +249,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
         </div>
 
         {/* Discipline Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div id="discipline-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {disciplines.map((discipline) => (
             <Link
               key={discipline.id}
@@ -394,44 +395,61 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
             </div>
           </div>
 
-          {/* Pricing */}
+          {/* Pricing / CTA */}
           <div className="text-center">
-            <div className="mb-4">
-              <span className="text-5xl font-bold text-zinc-900 dark:text-zinc-50">€4,99</span>
-              <span className="text-xl text-zinc-600 dark:text-zinc-400">/mese</span>
-            </div>
-            <p className="text-zinc-600 dark:text-zinc-400 mb-4">
-              Accesso illimitato a tutte le discipline • Notifiche e informazioni di supporto quotidiani • Cancella quando vuoi
-            </p>
-            <p className="text-sm text-zinc-500 dark:text-zinc-500 mb-6 max-w-sm mx-auto leading-relaxed">
-              Perchè devo pagare un abbonamento? Perchè chi investe, arriva fino in fondo.
-            </p>
-            <button 
-              onClick={() => {
-                // Step 1: Verifica login
-                if (!user) {
-                  setIsLoginOpen(true);
-                  return;
-                }
-
-                // Step 2: Verifica abbonamento - vai direttamente al checkout
-                if (!subscriptionInfo?.hasAccess) {
-                  handleSubscribe();
-                  return;
-                }
-
-                // Già abbonato - Nessuna azione necessaria
-                // L'utente può semplicemente scegliere le discipline dalla pagina
-              }}
-              disabled={isLoadingPortal && !!user && !subscriptionInfo?.hasAccess}
-              className="w-full sm:w-auto px-8 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoadingPortal && !!user && !subscriptionInfo?.hasAccess 
-                ? "Caricamento..." 
-                : subscriptionInfo?.hasAccess 
-                  ? "Abbonamento già attivo, non mollare!" 
-                  : "Abbonati e non mollare!"}
-            </button>
+            {isSubscriptionRequired() ? (
+              <>
+                <div className="mb-4">
+                  <span className="text-5xl font-bold text-zinc-900 dark:text-zinc-50">€4,99</span>
+                  <span className="text-xl text-zinc-600 dark:text-zinc-400">/mese</span>
+                </div>
+                <p className="text-zinc-600 dark:text-zinc-400 mb-4">
+                  Accesso illimitato a tutte le discipline • Notifiche e informazioni di supporto quotidiani • Cancella quando vuoi
+                </p>
+                <p className="text-sm text-zinc-500 dark:text-zinc-500 mb-6 max-w-sm mx-auto leading-relaxed">
+                  Perchè devo pagare un abbonamento? Perchè chi investe, arriva fino in fondo.
+                </p>
+                <button
+                  onClick={() => {
+                    if (!user) {
+                      setIsLoginOpen(true);
+                      return;
+                    }
+                    if (!subscriptionInfo?.hasAccess) {
+                      handleSubscribe();
+                      return;
+                    }
+                  }}
+                  disabled={isLoadingPortal && !!user && !subscriptionInfo?.hasAccess}
+                  className="w-full sm:w-auto px-8 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoadingPortal && !!user && !subscriptionInfo?.hasAccess
+                    ? "Caricamento..."
+                    : subscriptionInfo?.hasAccess
+                      ? "Abbonamento già attivo, non mollare!"
+                      : "Abbonati e non mollare!"}
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-lg text-zinc-600 dark:text-zinc-400 mb-6 max-w-xl mx-auto">
+                  Accesso gratuito a tutte le discipline. Accedi, scegli un percorso e non mollare.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!user) {
+                      setIsLoginOpen(true);
+                      return;
+                    }
+                    document.getElementById("discipline-grid")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                  }}
+                  className="w-full sm:w-auto px-8 py-3 bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900 font-semibold rounded-lg transition-colors duration-200 shadow-sm hover:shadow-md"
+                >
+                  {user ? "Scegli una disciplina" : "Accedi e inizia"}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </main>

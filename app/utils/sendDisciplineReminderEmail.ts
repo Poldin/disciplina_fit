@@ -89,19 +89,13 @@ function buildReminderEmailHtml(params: DisciplineReminderEmailParams): string {
           </tr>
           ${heroBlock}
           <tr>
-            <td style="padding:0 40px 24px;">
-              <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="background-color:#f4f4f5;border-radius:12px;border:2px solid #10b981;padding:24px 20px;">
-                    <p style="margin:0;font-size:11px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:2px;">
-                      Messaggio
-                    </p>
-                    <p style="margin:12px 0 0;font-size:15px;color:#3f3f46;line-height:1.7;">
-                      ${bodyHtml}
-                    </p>
-                  </td>
-                </tr>
-              </table>
+            <td style="padding:0 40px 28px;">
+              <p style="margin:0;font-size:11px;font-weight:700;color:#059669;text-transform:uppercase;letter-spacing:2px;">
+                Messaggio
+              </p>
+              <p style="margin:12px 0 0;font-size:15px;color:#3f3f46;line-height:1.7;">
+                ${bodyHtml}
+              </p>
             </td>
           </tr>
           ${ctaRow}

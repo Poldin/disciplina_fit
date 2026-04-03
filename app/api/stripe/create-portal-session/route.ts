@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
 import { createAdminClient } from '@/app/utils/supabase/admin';
 import { stripe } from '@/app/utils/stripe';
+import { isSubscriptionRequired } from '@/app/utils/subscriptionRequired';
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,6 +12,13 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json({ error: 'Non autenticato' }, { status: 401 });
+    }
+
+    if (!isSubscriptionRequired()) {
+      return NextResponse.json(
+        { error: 'Il portale abbonamenti non è disponibile' },
+        { status: 400 }
+      );
     }
 
     const supabaseAdmin = createAdminClient();

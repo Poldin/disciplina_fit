@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "./AuthProvider";
+import { isSubscriptionRequired } from "@/app/utils/subscriptionRequired";
 
 type SubscriptionSectionProps = {
   /** Titolo della sezione (es. "Abbonamento") */
@@ -47,6 +48,17 @@ export default function SubscriptionSection({ title = "Abbonamento" }: Subscript
   };
 
   if (!user) return null;
+
+  if (!isSubscriptionRequired()) {
+    return (
+      <section className="border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 p-6">
+        <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50 mb-4">{title}</h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          L&apos;accesso alle discipline è gratuito. Scegli un percorso dalla home e non mollare.
+        </p>
+      </section>
+    );
+  }
 
   return (
     <section className="border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-900 p-6">

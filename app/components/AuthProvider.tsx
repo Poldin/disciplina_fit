@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { createClient } from "@/app/utils/supabase/client";
 import { syncOneSignalAuthUser } from "@/app/utils/onesignalAuthSync";
+import { isSubscriptionRequired } from "@/app/utils/subscriptionRequired";
 import type { User } from "@supabase/supabase-js";
 
 export type SubscriptionStatus = "active" | "canceled" | "past_due" | "trialing" | "incomplete" | "none" | "loading";
@@ -90,7 +91,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .limit(1)
         .single();
 
-      const info = buildSubscriptionInfo(data);
+      let info = buildSubscriptionInfo(data);
+      if (!isSubscriptionRequired()) {
+        info = { ...info, hasAccess: true };
+      }
       setSubscription(info.status);
       setSubscriptionInfo(info);
     } catch {

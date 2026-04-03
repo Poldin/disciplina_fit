@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
 import { createAdminClient } from '@/app/utils/supabase/admin';
 import { populateMessageSchedule } from '@/app/utils/messageSchedule';
+import { isSubscriptionRequired } from '@/app/utils/subscriptionRequired';
 import type { NotificationPlan } from '@/app/utils/messageSchedule';
 
 export async function POST(request: NextRequest) {
@@ -26,21 +27,22 @@ export async function POST(request: NextRequest) {
 
     const supabaseAdmin = createAdminClient();
 
-    // Verifica abbonamento con accesso (active, trialing, past_due)
-    const { data: sub } = await supabaseAdmin
-      .from('subscriptions')
-      .select('status')
-      .eq('user_id', user.id)
-      .in('status', ['active', 'trialing', 'past_due'])
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+    if (isSubscriptionRequired()) {
+      const { data: sub } = await supabaseAdmin
+        .from('subscriptions')
+        .select('status')
+        .eq('user_id', user.id)
+        .in('status', ['active', 'trialing', 'past_due'])
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
-    if (!sub) {
-      return NextResponse.json(
-        { error: 'Abbonamento attivo richiesto per partecipare' },
-        { status: 403 }
-      );
+      if (!sub) {
+        return NextResponse.json(
+          { error: 'Abbonamento attivo richiesto per partecipare' },
+          { status: 403 }
+        );
+      }
     }
 
     // Verifica se già iscritto con percorso attivo a questa stessa disciplina
