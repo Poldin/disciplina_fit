@@ -41,6 +41,7 @@ export default async function DisciplinaDayPage({
     <DisciplinaDayPageClient
       slug={slug}
       dayNumber={dayNum}
+      disciplineId={result.disciplineId}
       disciplineTitle={result.disciplineTitle}
       segments={result.segments}
       pathProgress={result.pathProgress}

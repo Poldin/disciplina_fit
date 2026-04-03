@@ -29,6 +29,7 @@ type ScheduleRow = {
 export type LoadDisciplineDayContentResult =
   | {
       ok: true;
+      disciplineId: string;
       disciplineTitle: string | null;
       segments: DayContentSegment[];
       pathProgress: DayPagePathProgress | null;
@@ -116,6 +117,7 @@ export async function loadDisciplineDayContent(
 
   return {
     ok: true,
+    disciplineId: discipline.id as string,
     disciplineTitle: discipline.title,
     segments,
     pathProgress,

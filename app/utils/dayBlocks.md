@@ -91,7 +91,7 @@ Textarea con pulsante "Salva" che appare quando il contenuto è stato modificato
 {
   "type": "text_input",
   "id": "notes_day3",
-  "label": "Le tue riflessioni",
+  "label": "Le tue riflessioni personali",
   "placeholder": "Cosa hai vissuto oggi?"
 }
 ```
@@ -218,7 +218,7 @@ def saluta(nome):
     {
       "type": "text_input",
       "id": "notes_day3",
-      "label": "Le tue riflessioni",
+      "label": "Le tue riflessioni personali",
       "placeholder": "Cosa hai vissuto oggi? Hai avuto tentazioni? Come le hai gestite?"
     }
   ]

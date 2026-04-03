@@ -4,6 +4,7 @@ import Link from "next/link";
 import Footer from "@/app/components/Footer";
 import DayMessagesMarkdown from "./DayMessagesMarkdown";
 import DayBlocks from "./DayBlocks";
+import DayChatSection from "@/app/disciplina/[slug]/day/[dayNumber]/DayChatSection";
 import type { DayContentSegment } from "@/app/utils/disciplineDayContent";
 import type { DayPagePathProgress } from "@/app/utils/disciplinePathProgress";
 import { messageScheduleCaption } from "@/app/utils/messageScheduleCaption";
@@ -11,6 +12,7 @@ import { messageScheduleCaption } from "@/app/utils/messageScheduleCaption";
 type Props = {
   slug: string;
   dayNumber: number;
+  disciplineId: string;
   disciplineTitle: string | null;
   segments: DayContentSegment[];
   pathProgress: DayPagePathProgress | null;
@@ -20,6 +22,7 @@ type Props = {
 export default function DisciplinaDayPageClient({
   slug,
   dayNumber,
+  disciplineId,
   disciplineTitle,
   segments,
   pathProgress,
@@ -103,6 +106,7 @@ export default function DisciplinaDayPageClient({
             })}
           </div>
         )}
+        <DayChatSection disciplineId={disciplineId} dayNumber={dayNumber} />
       </div>
 
       <Footer />
