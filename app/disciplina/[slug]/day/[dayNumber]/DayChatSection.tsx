@@ -150,17 +150,14 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
 
   return (
     <section className="mt-12">
-      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/80 shadow-sm overflow-hidden">
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-zinc-100 dark:border-zinc-800">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
-            Chat del giorno
-          </h2>
-          <p className="mt-0.5 text-xs text-zinc-400 dark:text-zinc-500">
-            Condividi come stai vivendo questa giornata
-          </p>
-        </div>
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
+        Commenti
+      </h2>
+      <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-4">
+        condividi con chi arriverà qui dopo di te
+      </p>
 
+      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/80 shadow-sm overflow-hidden">
         {/* Messages list */}
         <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
           {loading ? (
@@ -169,7 +166,7 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
             </div>
           ) : messages.length === 0 ? (
             <div className="px-5 py-10 text-center text-sm text-zinc-400">
-              Nessun messaggio ancora — sii il primo!
+              Nessun messaggio ancora — inizia tu!
             </div>
           ) : (
             messages.map((msg) => {
@@ -308,12 +305,8 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
         </div>
 
         {/* New top-level message input */}
+        {!userHasTopLevel && (
         <div className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40">
-          {userHasTopLevel ? (
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center py-1">
-              Hai già lasciato il tuo messaggio per oggi ✓
-            </p>
-          ) : (
             <div className="space-y-2">
               <textarea
                 value={newContent}
@@ -324,7 +317,7 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
                     void submitMessage();
                   }
                 }}
-                placeholder="Come stai vivendo questa giornata?"
+                placeholder="scrivi qui"
                 rows={3}
                 className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 resize-none focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
               />
@@ -341,9 +334,15 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
                 </button>
               </div>
             </div>
-          )}
         </div>
+        )}
       </div>
+
+      {userHasTopLevel && (
+        <p className="mt-3 text-xs text-zinc-400 dark:text-zinc-500">
+          Hai già lasciato il tuo commento ✓
+        </p>
+      )}
     </section>
   );
 }
