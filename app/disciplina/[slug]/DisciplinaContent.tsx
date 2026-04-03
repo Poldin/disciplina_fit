@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import Header from "@/app/components/Header";
@@ -11,6 +11,7 @@ import NotificationPlanTimeline from "@/app/components/NotificationPlanTimeline"
 import { useAuth } from "@/app/components/AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
 import type { Discipline } from "@/app/utils/types";
+import { computeJoinedPathProgress } from "@/app/utils/disciplinePathProgress";
 
 /** Disciplina attiva dell'utente (diversa da quella corrente) */
 type ActiveDisciplineInfo = {
@@ -33,6 +34,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [isJoining, setIsJoining] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [joined, setJoined] = useState(false);
+  const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
   const [activeDiscipline, setActiveDiscipline] = useState<ActiveDisciplineInfo | null>(null);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
   /** Disciplina attiva: descrizione lunga in fisarmonica (chiusa di default) */
@@ -100,6 +102,39 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   useEffect(() => {
     checkJoined();
   }, [checkJoined]);
+
+  useEffect(() => {
+    if (!user || !joined) {
+      setSentDayNumbers([]);
+      return;
+    }
+    let cancelled = false;
+    void fetch(
+      `/api/disciplines/sent-days?disciplineId=${encodeURIComponent(discipline.id)}`
+    )
+      .then((res) => res.json())
+      .then((data: { sentDayNumbers?: number[] }) => {
+        if (!cancelled) setSentDayNumbers(data.sentDayNumbers ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setSentDayNumbers([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, joined, discipline.id]);
+
+  const joinedProgress = useMemo(
+    () =>
+      joined
+        ? computeJoinedPathProgress(
+            discipline.notification_plan,
+            discipline.lenght_days,
+            sentDayNumbers
+          )
+        : null,
+    [joined, discipline.notification_plan, discipline.lenght_days, sentDayNumbers]
+  );
 
   const handlePartecipa = async () => {
     // Step 1: Verifica login
@@ -284,9 +319,36 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
           )}
 
           <div className="flex items-start justify-between mb-4">
-            <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
-              {discipline.title}
-            </h1>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
+                {discipline.title}
+              </h1>
+              {joined && joinedProgress ? (
+                <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                  <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                    {joinedProgress.completed}
+                  </span>
+                  {" di "}
+                  <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                    {joinedProgress.total}
+                  </span>
+                  {" giorni sbloccati"}
+                  {joinedProgress.remaining > 0 ? (
+                    <>
+                      {" · "}
+                      <span className="text-zinc-500 dark:text-zinc-500">
+                        ne mancano {joinedProgress.remaining}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                      {" · "}
+                      percorso completato
+                    </span>
+                  )}
+                </p>
+              ) : null}
+            </div>
             {/* Tag nascosto temporaneamente */}
             {/* {discipline.tag && (
               <span className="px-3 py-1 text-sm font-medium rounded-full bg-zinc-100 text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">

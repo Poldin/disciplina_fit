@@ -54,20 +54,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Decrementa il contatore partecipanti
-    const { data: discipline } = await supabaseAdmin
-      .from('disciplines')
-      .select('subscribers')
-      .eq('id', disciplineId)
-      .single();
-
-    if (discipline && discipline.subscribers && discipline.subscribers > 0) {
-      await supabaseAdmin
-        .from('disciplines')
-        .update({ subscribers: discipline.subscribers - 1 })
-        .eq('id', disciplineId);
-    }
-
     return NextResponse.json({
       success: true,
       message: 'Percorso bloccato con successo',

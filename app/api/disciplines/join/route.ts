@@ -86,28 +86,11 @@ export async function POST(request: NextRequest) {
         .from('link_user_disciplines')
         .update({ stopped_at: now })
         .in('id', activeIds);
-
-      // Decrementa i contatori partecipanti delle discipline bloccate
-      for (const active of activeDisciplines) {
-        const { data: disc } = await supabaseAdmin
-          .from('disciplines')
-          .select('subscribers')
-          .eq('id', active.discipline_id)
-          .single();
-
-        if (disc && disc.subscribers && disc.subscribers > 0) {
-          await supabaseAdmin
-            .from('disciplines')
-            .update({ subscribers: disc.subscribers - 1 })
-            .eq('id', active.discipline_id);
-        }
-      }
     }
 
-    // Recupera notification_plan e subscribers per disciplina
     const { data: disciplineData } = await supabaseAdmin
       .from('disciplines')
-      .select('subscribers, notification_plan')
+      .select('notification_plan')
       .eq('id', disciplineId)
       .single();
 
@@ -144,16 +127,6 @@ export async function POST(request: NextRequest) {
         disciplineId,
         linkUserDisciplineId: newLink.id,
       });
-    }
-
-    // Incrementa il contatore partecipanti
-    const discipline = disciplineData;
-
-    if (discipline) {
-      await supabaseAdmin
-        .from('disciplines')
-        .update({ subscribers: (discipline.subscribers || 0) + 1 })
-        .eq('id', disciplineId);
     }
 
     return NextResponse.json({

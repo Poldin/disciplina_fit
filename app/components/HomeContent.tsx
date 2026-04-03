@@ -7,8 +7,8 @@ import LoginDialog from "./LoginDialog";
 import Footer from "./Footer";
 import { useAuth } from "./AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
-import { listNotificationPlanDayPreviews } from "@/app/utils/notificationPlanDisplay";
 import type { Discipline } from "@/app/utils/types";
+import { computeJoinedPathProgress } from "@/app/utils/disciplinePathProgress";
 import { isSubscriptionRequired } from "@/app/utils/subscriptionRequired";
 
 interface HomeContentProps {
@@ -25,23 +25,11 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
 
   const activeProgress = useMemo(() => {
     if (!activeDiscipline) return null;
-    const planDays = listNotificationPlanDayPreviews(activeDiscipline.notification_plan);
-    const sent = new Set(sentDayNumbers);
-    const segmentDayNumbers: number[] =
-      planDays.length > 0
-        ? planDays.map((d) => d.dayNumber)
-        : activeDiscipline.lenght_days && activeDiscipline.lenght_days > 0
-          ? Array.from({ length: activeDiscipline.lenght_days }, (_, i) => i + 1)
-          : [];
-
-    if (segmentDayNumbers.length === 0) return null;
-
-    const completed = segmentDayNumbers.filter((d) => sent.has(d)).length;
-    const total = segmentDayNumbers.length;
-    const remaining = Math.max(0, total - completed);
-    const pct = total > 0 ? Math.min(100, Math.round((completed / total) * 100)) : 0;
-
-    return { completed, total, remaining, pct, segmentDayNumbers, sent };
+    return computeJoinedPathProgress(
+      activeDiscipline.notification_plan,
+      activeDiscipline.lenght_days,
+      sentDayNumbers
+    );
   }, [activeDiscipline, sentDayNumbers]);
 
   // Pulisce l'URL dopo il ritorno da Stripe Checkout
