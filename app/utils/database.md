@@ -1,6 +1,15 @@
 -- WARNING: This schema is for context only and is not meant to be run.
 -- Table order and constraints may not be valid for execution.
 
+CREATE TABLE public.day_chat_likes (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  user_id uuid NOT NULL,
+  message_id uuid NOT NULL,
+  CONSTRAINT day_chat_likes_pkey PRIMARY KEY (id),
+  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT fk_message FOREIGN KEY (message_id) REFERENCES public.day_chat_messages(id)
+);
 CREATE TABLE public.day_chat_messages (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -9,6 +18,7 @@ CREATE TABLE public.day_chat_messages (
   day_number bigint NOT NULL,
   content text NOT NULL,
   parent_id uuid,
+  updated_at timestamp with time zone,
   CONSTRAINT day_chat_messages_pkey PRIMARY KEY (id),
   CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT fk_disc FOREIGN KEY (discipline_id) REFERENCES public.disciplines(id),
