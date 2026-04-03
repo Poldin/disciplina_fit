@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Heart, Eye, EyeOff, Pencil, Trash2, Check, X } from "lucide-react";
 import { createClient } from "@/app/utils/supabase/client";
 import { useAuth } from "@/app/components/AuthProvider";
 
@@ -27,6 +28,13 @@ type Props = {
   disciplineId: string;
   dayNumber: number;
 };
+
+const iconBtn =
+  "flex items-center gap-1 transition-colors disabled:opacity-40";
+const iconBtnGray =
+  `${iconBtn} text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-100`;
+const iconBtnRed =
+  `${iconBtn} text-zinc-400 hover:text-red-500 dark:hover:text-red-400`;
 
 export default function DayChatSection({ disciplineId, dayNumber }: Props) {
   const { user, userName: currentUserName } = useAuth();
@@ -79,8 +87,12 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
     }
 
     const likesMap: Record<string, LikeState> = {};
-    for (const l of (likesResult.data ?? []) as { message_id: string; user_id: string }[]) {
-      if (!likesMap[l.message_id]) likesMap[l.message_id] = { count: 0, likedByMe: false };
+    for (const l of (likesResult.data ?? []) as {
+      message_id: string;
+      user_id: string;
+    }[]) {
+      if (!likesMap[l.message_id])
+        likesMap[l.message_id] = { count: 0, likedByMe: false };
       likesMap[l.message_id].count++;
       if (l.user_id === user?.id) likesMap[l.message_id].likedByMe = true;
     }
@@ -88,15 +100,15 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
     const topLevel = rows.filter((r) => r.parent_id === null) as RawMessage[];
     const replies = rows.filter((r) => r.parent_id !== null) as RawMessage[];
 
-    const built: ChatMessage[] = topLevel.map((m) => ({
-      ...m,
-      userName: nameMap[m.user_id] ?? null,
-      replies: replies
-        .filter((r) => r.parent_id === m.id)
-        .map((r) => ({ ...r, userName: nameMap[r.user_id] ?? null })),
-    }));
-
-    setMessages(built);
+    setMessages(
+      topLevel.map((m) => ({
+        ...m,
+        userName: nameMap[m.user_id] ?? null,
+        replies: replies
+          .filter((r) => r.parent_id === m.id)
+          .map((r) => ({ ...r, userName: nameMap[r.user_id] ?? null })),
+      }))
+    );
     setLikes(likesMap);
     setLoading(false);
   }, [disciplineId, dayNumber, user?.id]);
@@ -110,8 +122,6 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
   const toggleLike = async (messageId: string) => {
     if (!user) return;
     const current = likes[messageId] ?? { count: 0, likedByMe: false };
-
-    // Optimistic update
     setLikes((prev) => ({
       ...prev,
       [messageId]: {
@@ -119,7 +129,6 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
         likedByMe: !current.likedByMe,
       },
     }));
-
     const supabase = createClient();
     if (current.likedByMe) {
       await supabase
@@ -221,19 +230,71 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
   const toggleReply = (id: string) =>
     setOpenReplyId((prev) => (prev === id ? null : id));
 
+  /* ── Inline edit UI ── */
+  const EditBox = ({
+    id,
+    rows = 3,
+  }: {
+    id: string;
+    rows?: number;
+  }) => (
+    <div className="mt-1 space-y-2">
+      <textarea
+        value={editContent[id] ?? ""}
+        onChange={(e) =>
+          setEditContent((prev) => ({ ...prev, [id]: e.target.value }))
+        }
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            void saveEdit(id);
+          }
+          if (e.key === "Escape") cancelEdit();
+        }}
+        rows={rows}
+        autoFocus
+        className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 resize-none focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
+      />
+      <div className="flex gap-2 justify-end">
+        <button
+          onClick={cancelEdit}
+          title="Annulla"
+          className={iconBtnGray}
+        >
+          <X size={14} />
+          <span className="text-xs">Annulla</span>
+        </button>
+        <button
+          onClick={() => void saveEdit(id)}
+          disabled={!editContent[id]?.trim()}
+          title="Salva"
+          className={`${iconBtn} px-3 py-1 rounded-md bg-zinc-900 dark:bg-zinc-100 text-xs font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300`}
+        >
+          <Check size={13} />
+          <span>Salva</span>
+        </button>
+      </div>
+    </div>
+  );
+
+  /* ── Like button ── */
   const LikeButton = ({ messageId }: { messageId: string }) => {
-    const { count, likedByMe } = likes[messageId] ?? { count: 0, likedByMe: false };
+    const { count, likedByMe } = likes[messageId] ?? {
+      count: 0,
+      likedByMe: false,
+    };
     return (
       <button
         onClick={() => void toggleLike(messageId)}
-        className={`flex items-center gap-1 text-xs transition-colors ${
-          likedByMe
-            ? "text-red-400 hover:text-red-500"
-            : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-        }`}
+        title={likedByMe ? "Rimuovi like" : "Metti like"}
+        className={`${iconBtn} ${likedByMe ? "text-red-400 hover:text-red-500" : iconBtnGray}`}
       >
-        <span>{likedByMe ? "♥" : "♡"}</span>
-        {count > 0 && <span>{count}</span>}
+        <Heart
+          size={13}
+          fill={likedByMe ? "currentColor" : "none"}
+          strokeWidth={likedByMe ? 0 : 1.8}
+        />
+        {count > 0 && <span className="text-xs">{count}</span>}
       </button>
     );
   };
@@ -248,7 +309,6 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
       </p>
 
       <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/80 shadow-sm overflow-hidden">
-        {/* Messages list */}
         <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
           {loading ? (
             <div className="px-5 py-10 text-center text-sm text-zinc-400">
@@ -262,6 +322,9 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
             messages.map((msg) => {
               const isOpen = openReplyId === msg.id;
               const replyCount = msg.replies.length;
+              const isOwn = msg.user_id === user?.id;
+              const isEditing = editingId === msg.id;
+
               return (
                 <div key={msg.id} className="px-5 py-4 space-y-3">
                   {/* Top-level message */}
@@ -280,75 +343,56 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
                           {formatTime(msg.created_at)}
                         </span>
                       </div>
-                      {editingId === msg.id ? (
-                        <div className="mt-1 space-y-2">
-                          <textarea
-                            value={editContent[msg.id] ?? ""}
-                            onChange={(e) =>
-                              setEditContent((prev) => ({ ...prev, [msg.id]: e.target.value }))
-                            }
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void saveEdit(msg.id); }
-                              if (e.key === "Escape") cancelEdit();
-                            }}
-                            rows={3}
-                            autoFocus
-                            className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 px-3 py-2 text-sm text-zinc-800 dark:text-zinc-200 resize-none focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
-                          />
-                          <div className="flex gap-2 justify-end">
-                            <button onClick={cancelEdit} className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">Annulla</button>
-                            <button
-                              onClick={() => void saveEdit(msg.id)}
-                              disabled={!editContent[msg.id]?.trim()}
-                              className="px-3 py-1 rounded-md bg-zinc-900 dark:bg-zinc-100 text-xs font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors disabled:opacity-40"
-                            >
-                              Salva
-                            </button>
-                          </div>
-                        </div>
+
+                      {isEditing ? (
+                        <EditBox id={msg.id} rows={3} />
                       ) : (
                         <>
                           <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
                             {msg.content}
                           </p>
                           {msg.updated_at && (
-                            <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">modificato</span>
+                            <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">
+                              modificato
+                            </span>
                           )}
                         </>
                       )}
-                      <div className="mt-2 flex items-center gap-4">
+
+                      {/* Action bar */}
+                      <div className="mt-2 flex items-center gap-3">
                         <LikeButton messageId={msg.id} />
+
                         <button
                           onClick={() => toggleReply(msg.id)}
-                          className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                          title={isOpen ? "Nascondi risposte" : "Vedi risposte"}
+                          className={iconBtnGray}
                         >
-                          {isOpen
-                            ? "Nascondi"
-                            : replyCount > 0
-                              ? `↳ ${replyCount} rispost${replyCount === 1 ? "a" : "e"}`
-                              : "Rispondi"}
+                          {isOpen ? (
+                            <EyeOff size={13} />
+                          ) : (
+                            <Eye size={13} />
+                          )}
+                          {!isOpen && replyCount > 0 && (
+                            <span className="text-xs">{replyCount}</span>
+                          )}
                         </button>
-                        {replyCount > 0 && !isOpen && (
-                          <button
-                            onClick={() => toggleReply(msg.id)}
-                            className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
-                          >
-                            Rispondi
-                          </button>
-                        )}
-                        {msg.user_id === user?.id && editingId !== msg.id && (
+
+                        {isOwn && !isEditing && (
                           <>
                             <button
                               onClick={() => startEdit(msg.id, msg.content)}
-                              className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
+                              title="Modifica"
+                              className={iconBtnGray}
                             >
-                              Modifica
+                              <Pencil size={13} />
                             </button>
                             <button
                               onClick={() => void deleteMessage(msg.id)}
-                              className="text-xs text-red-400 hover:text-red-500 transition-colors"
+                              title="Elimina"
+                              className={iconBtnRed}
                             >
-                              Elimina
+                              <Trash2 size={13} />
                             </button>
                           </>
                         )}
@@ -359,80 +403,70 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
                   {/* Replies + reply input (collapsible) */}
                   {isOpen && (
                     <div className="ml-11 space-y-3">
-                      {msg.replies.map((reply) => (
-                        <div key={reply.id} className="flex gap-2.5">
-                          <div className="w-6 h-6 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-600 dark:text-zinc-300">
-                            {displayName(reply.user_id, reply.userName)
-                              .charAt(0)
-                              .toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-baseline gap-2 flex-wrap">
-                              <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
-                                {displayName(reply.user_id, reply.userName)}
-                              </span>
-                              <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                                {formatTime(reply.created_at)}
-                              </span>
+                      {msg.replies.map((reply) => {
+                        const isReplyOwn = reply.user_id === user?.id;
+                        const isReplyEditing = editingId === reply.id;
+                        return (
+                          <div key={reply.id} className="flex gap-2.5">
+                            <div className="w-6 h-6 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-600 dark:text-zinc-300">
+                              {displayName(reply.user_id, reply.userName)
+                                .charAt(0)
+                                .toUpperCase()}
                             </div>
-                            {editingId === reply.id ? (
-                              <div className="mt-0.5 space-y-2">
-                                <textarea
-                                  value={editContent[reply.id] ?? ""}
-                                  onChange={(e) =>
-                                    setEditContent((prev) => ({ ...prev, [reply.id]: e.target.value }))
-                                  }
-                                  onKeyDown={(e) => {
-                                    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void saveEdit(reply.id); }
-                                    if (e.key === "Escape") cancelEdit();
-                                  }}
-                                  rows={2}
-                                  autoFocus
-                                  className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/60 px-3 py-2 text-xs text-zinc-800 dark:text-zinc-200 resize-none focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
-                                />
-                                <div className="flex gap-2 justify-end">
-                                  <button onClick={cancelEdit} className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors">Annulla</button>
-                                  <button
-                                    onClick={() => void saveEdit(reply.id)}
-                                    disabled={!editContent[reply.id]?.trim()}
-                                    className="px-3 py-1 rounded-md bg-zinc-900 dark:bg-zinc-100 text-xs font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors disabled:opacity-40"
-                                  >
-                                    Salva
-                                  </button>
-                                </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-baseline gap-2 flex-wrap">
+                                <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                                  {displayName(reply.user_id, reply.userName)}
+                                </span>
+                                <span className="text-xs text-zinc-400 dark:text-zinc-500">
+                                  {formatTime(reply.created_at)}
+                                </span>
                               </div>
-                            ) : (
-                              <>
-                                <p className="mt-0.5 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
-                                  {reply.content}
-                                </p>
-                                {reply.updated_at && (
-                                  <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">modificato</span>
-                                )}
-                              </>
-                            )}
-                            <div className="mt-1.5 flex items-center gap-3">
-                              <LikeButton messageId={reply.id} />
-                              {reply.user_id === user?.id && editingId !== reply.id && (
+
+                              {isReplyEditing ? (
+                                <EditBox id={reply.id} rows={2} />
+                              ) : (
                                 <>
-                                  <button
-                                    onClick={() => startEdit(reply.id, reply.content)}
-                                    className="text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 transition-colors"
-                                  >
-                                    Modifica
-                                  </button>
-                                  <button
-                                    onClick={() => void deleteMessage(reply.id)}
-                                    className="text-xs text-red-400 hover:text-red-500 transition-colors"
-                                  >
-                                    Elimina
-                                  </button>
+                                  <p className="mt-0.5 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
+                                    {reply.content}
+                                  </p>
+                                  {reply.updated_at && (
+                                    <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">
+                                      modificato
+                                    </span>
+                                  )}
                                 </>
                               )}
+
+                              <div className="mt-1.5 flex items-center gap-3">
+                                <LikeButton messageId={reply.id} />
+                                {isReplyOwn && !isReplyEditing && (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        startEdit(reply.id, reply.content)
+                                      }
+                                      title="Modifica"
+                                      className={iconBtnGray}
+                                    >
+                                      <Pencil size={12} />
+                                    </button>
+                                    <button
+                                      onClick={() =>
+                                        void deleteMessage(reply.id)
+                                      }
+                                      title="Elimina"
+                                      className={iconBtnRed}
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
 
                       {/* Reply input */}
                       <div className="flex gap-2.5">
