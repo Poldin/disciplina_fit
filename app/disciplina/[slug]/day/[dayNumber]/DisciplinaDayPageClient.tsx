@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Footer from "@/app/components/Footer";
 import DayMessagesMarkdown from "./DayMessagesMarkdown";
 import DayBlocks from "./DayBlocks";
 import type { DayContentSegment } from "@/app/utils/disciplineDayContent";
@@ -103,6 +104,8 @@ export default function DisciplinaDayPageClient({
           </div>
         )}
       </div>
+
+      <Footer />
     </div>
   );
 }

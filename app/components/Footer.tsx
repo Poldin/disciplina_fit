@@ -1,4 +1,5 @@
 import FooterAppActions from "./FooterAppActions";
+import FeedbackImproveButton from "./FeedbackImproveButton";
 
 const oneSignalEnabled = Boolean(process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID);
 
@@ -25,6 +26,9 @@ export default function Footer() {
               Supporto
             </h3>
             <ul className="space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
+              <li>
+                <FeedbackImproveButton />
+              </li>
               <li><a href="#" className="hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors">Privacy Policy</a></li>
               <li><a href="#" className="hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors">Termini di Servizio</a></li>
               <li><a href="https://wa.me/393461529524" className="hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors">Scrivici su WhatsApp: +39 346 152 9524</a></li>

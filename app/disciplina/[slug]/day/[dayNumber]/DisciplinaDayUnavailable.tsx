@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Footer from "@/app/components/Footer";
 
 type Props = { slug: string; dayNumber: number };
 
@@ -28,6 +29,8 @@ export default function DisciplinaDayUnavailable({ slug, dayNumber }: Props) {
           Questo giorno non è disponibile o non fa parte del tuo percorso attivo.
         </p>
       </div>
+
+      <Footer />
     </div>
   );
 }
