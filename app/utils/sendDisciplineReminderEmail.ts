@@ -1,6 +1,6 @@
 /**
- * Backup email per promemoria disciplina (Resend).
- * Fallimenti non devono impattare il flusso principale (push già riuscita).
+ * Email promemoria disciplina (Resend).
+ * Invio indipendente dalla push OneSignal: fallimenti di un canale non bloccano l'altro.
  */
 
 function escapeHtml(s: string): string {
@@ -102,7 +102,7 @@ function buildReminderEmailHtml(params: DisciplineReminderEmailParams): string {
           <tr>
             <td style="padding:0 40px 32px;">
               <p style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.7;">
-                Ti abbiamo inviato anche una notifica sull&apos;app: questa email è un backup se non la vedi.
+                Se hai l&apos;app, potresti aver ricevuto anche una notifica; in ogni caso il contenuto è nel link qui sopra.
               </p>
             </td>
           </tr>

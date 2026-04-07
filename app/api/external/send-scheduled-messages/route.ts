@@ -3,8 +3,8 @@ import { sendDueScheduledMessages } from '@/app/utils/sendScheduledMessages';
 
 /**
  * Endpoint server triggerabile dall'esterno (es. cron Supabase):
- * invia notifiche push (OneSignal) per le righe message_schedule non ancora inviate
- * con send_time_utc <= now (UTC), poi marca is_sent=true sui successi.
+ * per ogni message_schedule in scadenza tenta push (OneSignal) e email (Resend) in modo indipendente;
+ * marca is_sent=true se almeno un canale ha successo.
  *
  * TODO: ripristinare verifica Authorization (Bearer / secret) prima della produzione pubblica.
  */

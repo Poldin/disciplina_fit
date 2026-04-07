@@ -2,13 +2,17 @@ import { createAdminClient } from '@/app/utils/supabase/admin';
 import { sendPushToExternalUser } from '@/app/utils/onesignalPush';
 import { getPublicSiteUrl } from '@/app/utils/publicSiteUrl';
 import { sendDisciplineReminderEmail } from '@/app/utils/sendDisciplineReminderEmail';
+import {
+  appendScheduleDeliveryLog,
+  type ScheduleDeliveryLogEntry,
+} from '@/app/utils/scheduleDeliveryLog';
 
 type ScheduledMessageRow = {
   id: string;
   send_time_utc: string | null;
   link_user_discipline_id: number | null;
   day_number: number | null;
-  metadata: { message?: string } | null;
+  metadata: Record<string, unknown> | null;
 };
 
 type DisciplineEmbed = {
@@ -53,6 +57,38 @@ function resolveHttpsImageUrl(baseUrl: string, imgUrl: string | null): string | 
   if (t.startsWith('//')) return `https:${t}`;
   if (t.startsWith('/')) return `${baseUrl}${t}`;
   return `${baseUrl}/${t}`;
+}
+
+async function persistMessageScheduleDeliveryLog(
+  supabaseAdmin: ReturnType<typeof createAdminClient>,
+  messageId: string,
+  fallbackMetadata: unknown,
+  entries: ScheduleDeliveryLogEntry[]
+) {
+  if (entries.length === 0) return;
+  const { data: fresh, error: fetchErr } = await supabaseAdmin
+    .from('message_schedule')
+    .select('metadata')
+    .eq('id', messageId)
+    .maybeSingle();
+  if (fetchErr) {
+    console.error(
+      `[sendScheduledMessages] metadata fetch failed message=${messageId}`,
+      fetchErr
+    );
+    return;
+  }
+  const merged = appendScheduleDeliveryLog(fresh?.metadata ?? fallbackMetadata, entries);
+  const { error: updateErr } = await supabaseAdmin
+    .from('message_schedule')
+    .update({ metadata: merged })
+    .eq('id', messageId);
+  if (updateErr) {
+    console.error(
+      `[sendScheduledMessages] metadata update failed message=${messageId}`,
+      updateErr
+    );
+  }
 }
 
 export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
@@ -117,7 +153,10 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
 
   for (const msg of messages) {
     const linkId = msg.link_user_discipline_id;
-    const body = msg.metadata?.message?.trim();
+    const body =
+      typeof msg.metadata?.message === 'string'
+        ? msg.metadata.message.trim()
+        : '';
     if (!linkId || !body) {
       console.warn(`[sendScheduledMessages] skip message=${msg.id} reason=missing_link_or_body linkId=${String(linkId)} hasBody=${Boolean(body)}`);
       failed += 1;
@@ -152,6 +191,10 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     const pushTitle = disciplineTitle || undefined;
     const chromeWebImage = resolveHttpsImageUrl(baseUrl, disciplineImgUrl);
 
+    const logEntries: ScheduleDeliveryLogEntry[] = [];
+    const stamp = () => new Date().toISOString();
+
+    let pushOk = false;
     try {
       console.log(
         `[sendScheduledMessages] push message=${msg.id} userId=${userId} linkId=${linkId} sendTimeUtc=${msg.send_time_utc} url=${openUrl ?? 'none'} title=${pushTitle ?? 'default'} image=${chromeWebImage ?? 'none'}`
@@ -165,55 +208,114 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
             }
           : {}),
       });
-      if (!result.ok) {
-        failed += 1;
+      if (result.ok) {
+        pushOk = true;
+        logEntries.push({
+          channel: 'push',
+          status: 'success',
+          at: stamp(),
+          onesignal_id: result.messageId,
+        });
+        console.log(`[sendScheduledMessages] push ok message=${msg.id} onesignalId=${result.messageId}`);
+      } else {
+        logEntries.push({
+          channel: 'push',
+          status: 'error',
+          at: stamp(),
+          note: result.reason,
+        });
         console.warn(`[sendScheduledMessages] push failed message=${msg.id} userId=${userId}: ${result.reason}`);
-        continue;
-      }
-      console.log(`[sendScheduledMessages] sent message=${msg.id} onesignalId=${result.messageId}`);
-      successfullySentIds.push(msg.id);
-
-      // Backup email (Resend): solo dopo push ok; errori mail non influenzano is_sent né `failed`
-      try {
-        const { data: authData, error: authErr } =
-          await supabaseAdmin.auth.admin.getUserById(userId);
-        const userEmail = authData?.user?.email?.trim();
-        if (authErr || !userEmail) {
-          console.warn(
-            `[sendScheduledMessages] backup email skipped message=${msg.id} userId=${userId} reason=${authErr?.message ?? 'no email on account'}`
-          );
-        } else {
-          const dayLabel =
-            Number.isFinite(dayNum) && dayNum >= 1 ? ` · giorno ${dayNum}` : '';
-          const subjectBase = disciplineTitle?.trim() || 'disciplinaFIT';
-          const emailResult = await sendDisciplineReminderEmail({
-            to: userEmail,
-            subject: `${subjectBase}${dayLabel}`,
-            disciplineTitle: disciplineTitle || 'disciplinaFIT',
-            bodyText: body,
-            openUrl,
-            heroImageUrl: chromeWebImage,
-          });
-          if (emailResult.ok) {
-            emailsSent += 1;
-            console.log(`[sendScheduledMessages] backup email sent message=${msg.id} to=${userEmail}`);
-          } else {
-            emailSendErrors += 1;
-            console.warn(
-              `[sendScheduledMessages] backup email failed message=${msg.id}: ${emailResult.reason}`
-            );
-          }
-        }
-      } catch (emailErr) {
-        emailSendErrors += 1;
-        console.warn(
-          `[sendScheduledMessages] backup email exception message=${msg.id}`,
-          emailErr
-        );
       }
     } catch (err) {
+      const note = err instanceof Error ? err.message : String(err);
+      logEntries.push({
+        channel: 'push',
+        status: 'error',
+        at: stamp(),
+        note,
+      });
+      console.error(`[sendScheduledMessages] push exception message=${msg.id} userId=${userId}`, err);
+    }
+
+    let emailOk = false;
+    try {
+      const { data: authData, error: authErr } =
+        await supabaseAdmin.auth.admin.getUserById(userId);
+      const userEmail = authData?.user?.email?.trim();
+      if (authErr || !userEmail) {
+        const skipNote = authErr?.message ?? 'no email on account';
+        logEntries.push({
+          channel: 'email',
+          status: 'skipped',
+          at: stamp(),
+          note: skipNote,
+        });
+        console.warn(
+          `[sendScheduledMessages] email skipped message=${msg.id} userId=${userId} reason=${skipNote}`
+        );
+      } else {
+        const dayLabel =
+          Number.isFinite(dayNum) && dayNum >= 1 ? ` · giorno ${dayNum}` : '';
+        const subjectBase = disciplineTitle?.trim() || 'disciplinaFIT';
+        const emailResult = await sendDisciplineReminderEmail({
+          to: userEmail,
+          subject: `${subjectBase}${dayLabel}`,
+          disciplineTitle: disciplineTitle || 'disciplinaFIT',
+          bodyText: body,
+          openUrl,
+          heroImageUrl: chromeWebImage,
+        });
+        if (emailResult.ok) {
+          emailOk = true;
+          emailsSent += 1;
+          logEntries.push({
+            channel: 'email',
+            status: 'success',
+            at: stamp(),
+          });
+          console.log(`[sendScheduledMessages] email sent message=${msg.id} to=${userEmail}`);
+        } else {
+          emailSendErrors += 1;
+          logEntries.push({
+            channel: 'email',
+            status: 'error',
+            at: stamp(),
+            note: emailResult.reason,
+          });
+          console.warn(
+            `[sendScheduledMessages] email failed message=${msg.id}: ${emailResult.reason}`
+          );
+        }
+      }
+    } catch (emailErr) {
+      emailSendErrors += 1;
+      const note = emailErr instanceof Error ? emailErr.message : String(emailErr);
+      logEntries.push({
+        channel: 'email',
+        status: 'error',
+        at: stamp(),
+        note,
+      });
+      console.warn(
+        `[sendScheduledMessages] email exception message=${msg.id}`,
+        emailErr
+      );
+    }
+
+    await persistMessageScheduleDeliveryLog(
+      supabaseAdmin,
+      msg.id,
+      msg.metadata,
+      logEntries
+    );
+
+    if (pushOk || emailOk) {
+      successfullySentIds.push(msg.id);
+    } else {
       failed += 1;
-      console.error(`[sendScheduledMessages] failed message=${msg.id} userId=${userId}`, err);
+      console.warn(
+        `[sendScheduledMessages] no channel succeeded message=${msg.id} userId=${userId} pushOk=${pushOk} emailOk=${emailOk}`
+      );
     }
   }
 
