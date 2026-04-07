@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/app/components/Header";
 import LoginDialog from "@/app/components/LoginDialog";
-import SubscriptionSection from "@/app/components/SubscriptionSection";
 import { useAuth } from "@/app/components/AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
 import PushNotificationToggle from "@/app/components/PushNotificationToggle";
@@ -104,10 +103,6 @@ export default function ProfileContent() {
           <p className="text-sm text-zinc-500 dark:text-zinc-400">
             Account attivo dal {formatActivationDate(user.created_at)}
           </p>
-        </div>
-
-        <div className="mb-10">
-          <SubscriptionSection />
         </div>
 
         {oneSignalEnabled && (

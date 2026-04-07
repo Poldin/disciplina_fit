@@ -6,7 +6,7 @@ import Header from "./Header";
 import LoginDialog from "./LoginDialog";
 import Footer from "./Footer";
 import { useAuth } from "./AuthProvider";
-import { createClient } from "@/app/utils/supabase/client";
+import { useActiveDiscipline } from "@/app/hooks/useActiveDiscipline";
 import type { Discipline } from "@/app/utils/types";
 import { computeJoinedPathProgress } from "@/app/utils/disciplinePathProgress";
 import { formatScheduleDayDateItShort } from "@/app/utils/scheduleDayUnlock";
@@ -19,12 +19,16 @@ interface HomeContentProps {
 export default function HomeContent({ disciplines }: HomeContentProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
-  const [joinedDisciplineIds, setJoinedDisciplineIds] = useState<Set<string>>(new Set());
-  const [activeDiscipline, setActiveDiscipline] = useState<Discipline | null>(null);
   const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
   /** Primo invio giorno 1 (UTC), stesso criterio della timeline disciplina */
   const [pathStartIso, setPathStartIso] = useState<string | null>(null);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
+  const { activeDiscipline, activeDisciplineId } = useActiveDiscipline(user?.id);
+
+  const joinedDisciplineIds = useMemo(
+    () => (activeDisciplineId ? new Set([activeDisciplineId]) : new Set<string>()),
+    [activeDisciplineId]
+  );
 
   const activeProgress = useMemo(() => {
     if (!activeDiscipline) return null;
@@ -44,40 +48,6 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       window.history.replaceState({}, "", "/");
     }
   }, [refreshSubscription]);
-
-  // Carica la disciplina attiva dell'utente (una sola alla volta)
-  useEffect(() => {
-    const fetchActiveDiscipline = async () => {
-      if (!user) {
-        setJoinedDisciplineIds(new Set());
-        setActiveDiscipline(null);
-        return;
-      }
-
-      const supabase = createClient();
-      const { data } = await supabase
-        .from("link_user_disciplines")
-        .select(
-          "discipline_id, disciplines(id, title, slug, img_url, short_desc, lenght_days, notification_plan)"
-        )
-        .eq("user_id", user.id)
-        .is("stopped_at", null) // Solo percorsi attivi (non bloccati)
-        .limit(1)
-        .single();
-
-      if (data) {
-        setJoinedDisciplineIds(new Set([data.discipline_id]));
-        // Il join restituisce un oggetto (perché è una relazione many-to-one)
-        const disc = data.disciplines as unknown as Discipline;
-        setActiveDiscipline(disc ?? null);
-      } else {
-        setJoinedDisciplineIds(new Set());
-        setActiveDiscipline(null);
-      }
-    };
-
-    fetchActiveDiscipline();
-  }, [user]);
 
   useEffect(() => {
     if (!user || !activeDiscipline) {

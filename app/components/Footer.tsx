@@ -1,13 +1,45 @@
+"use client";
+
+import Link from "next/link";
 import FooterAppActions from "./FooterAppActions";
 import FeedbackImproveButton from "./FeedbackImproveButton";
+import { useAuth } from "./AuthProvider";
+import { useActiveDiscipline } from "@/app/hooks/useActiveDiscipline";
 
 const oneSignalEnabled = Boolean(process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID);
 
 export default function Footer() {
+  const { user, loading: authLoading } = useAuth();
+  const { activeDiscipline } = useActiveDiscipline(user?.id);
+
   return (
     <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 mt-20">
       <div className="max-w-7xl mx-auto px-1 sm:px-6 lg:px-8 py-12">
         <FooterAppActions oneSignalEnabled={oneSignalEnabled} />
+
+        {!authLoading && user && (
+          <div className="mb-8 pb-8 border-b border-zinc-200 dark:border-zinc-800 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              {activeDiscipline && (
+                <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <span className="text-zinc-500 dark:text-zinc-500">Disciplina in corso: </span>
+                  <Link
+                    href={`/disciplina/${activeDiscipline.slug}`}
+                    className="font-medium text-zinc-900 dark:text-zinc-50 hover:underline"
+                  >
+                    {activeDiscipline.title || "Apri disciplina"}
+                  </Link>
+                </p>
+              )}
+            </div>
+            <Link
+              href="/profile"
+              className="inline-flex items-center justify-center px-6 py-2 border border-zinc-300 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors duration-200 shrink-0 self-start sm:self-auto"
+            >
+              profilo
+            </Link>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand Section */}
