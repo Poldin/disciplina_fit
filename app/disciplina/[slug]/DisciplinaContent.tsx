@@ -11,6 +11,10 @@ import NotificationPlanTimeline from "@/app/components/NotificationPlanTimeline"
 import { useAuth } from "@/app/components/AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
 import {
+  clearDisciplinaListScroll,
+  peekDisciplinaListScroll,
+} from "@/app/utils/disciplinaScrollMemory";
+import {
   clearDisciplinaSessionCache,
   readJoinedFromSession,
   readSentDaysFromSession,
@@ -50,6 +54,43 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   useEffect(() => {
     setLongDescOpen(false);
   }, [discipline.id]);
+
+  // Ripristina scroll dopo ritorno da una pagina giorno (Next tende a portare in cima).
+  useEffect(() => {
+    const slug = discipline.slug;
+    const y = peekDisciplinaListScroll(slug);
+    if (y === null) return;
+
+    let cancelled = false;
+    let raf1 = 0;
+    let raf2 = 0;
+    let timeoutId = 0;
+
+    const scrollOnly = () => {
+      if (cancelled) return;
+      window.scrollTo(0, y);
+    };
+
+    const scrollAndForget = () => {
+      if (cancelled) return;
+      window.scrollTo(0, y);
+      clearDisciplinaListScroll(slug);
+    };
+
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        scrollOnly();
+        timeoutId = window.setTimeout(scrollAndForget, 0);
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      clearTimeout(timeoutId);
+    };
+  }, [discipline.slug]);
 
   // Pulisce l'URL dopo il ritorno da Stripe Checkout
   useEffect(() => {
