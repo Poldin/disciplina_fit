@@ -347,8 +347,8 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
             </h2>
             <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-3xl mx-auto mb-6">
               Quante volte hai iniziato con entusiasmo e mollato dopo una settimana? L&apos;abbonamento in palestra inutilizzato, 
-              la dieta dimenticata, la promessa di correre ogni mattina svanita. Il problema non sei tu: è che nessuno ti ha mai 
-              accompagnato davvero, giorno dopo giorno.
+              la dieta dimenticata, la promessa di correre ogni mattina svanita. Il problema non sei tu: è che nessuno ti  
+              accompagna davvero, giorno dopo giorno.
             </p>
             <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-3xl mx-auto">
               Non serve essere degli atleti o spingersi al limite per trovare il proprio equilibrio. 

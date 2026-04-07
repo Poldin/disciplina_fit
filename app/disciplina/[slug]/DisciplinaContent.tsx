@@ -10,6 +10,13 @@ import Footer from "@/app/components/Footer";
 import NotificationPlanTimeline from "@/app/components/NotificationPlanTimeline";
 import { useAuth } from "@/app/components/AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
+import {
+  clearDisciplinaSessionCache,
+  readJoinedFromSession,
+  readSentDaysFromSession,
+  writeJoinedToSession,
+  writeSentDaysToSession,
+} from "@/app/utils/disciplinaSessionCache";
 import type { Discipline } from "@/app/utils/types";
 import { computeJoinedPathProgress } from "@/app/utils/disciplinePathProgress";
 
@@ -62,6 +69,12 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       return;
     }
 
+    const cached = readJoinedFromSession(user.id, discipline.id);
+    if (cached) {
+      setJoined(cached.joined);
+      setActiveDiscipline(cached.activeDiscipline);
+    }
+
     const supabase = createClient();
 
     // Controlla se è iscritto a QUESTA disciplina
@@ -76,6 +89,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     if (thisJoined) {
       setJoined(true);
       setActiveDiscipline(null);
+      writeJoinedToSession(user.id, discipline.id, true, null);
       return;
     }
 
@@ -94,8 +108,10 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     if (otherActive?.disciplines) {
       const disc = otherActive.disciplines as unknown as ActiveDisciplineInfo;
       setActiveDiscipline(disc);
+      writeJoinedToSession(user.id, discipline.id, false, disc);
     } else {
       setActiveDiscipline(null);
+      writeJoinedToSession(user.id, discipline.id, false, null);
     }
   }, [user, discipline.id]);
 
@@ -108,13 +124,20 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       setSentDayNumbers([]);
       return;
     }
+    const cachedDays = readSentDaysFromSession(user.id, discipline.id);
+    if (cachedDays) {
+      setSentDayNumbers(cachedDays);
+    }
     let cancelled = false;
     void fetch(
       `/api/disciplines/sent-days?disciplineId=${encodeURIComponent(discipline.id)}`
     )
       .then((res) => res.json())
       .then((data: { sentDayNumbers?: number[] }) => {
-        if (!cancelled) setSentDayNumbers(data.sentDayNumbers ?? []);
+        if (cancelled) return;
+        const nums = data.sentDayNumbers ?? [];
+        setSentDayNumbers(nums);
+        writeSentDaysToSession(user.id, discipline.id, nums);
       })
       .catch(() => {
         if (!cancelled) setSentDayNumbers([]);
@@ -179,8 +202,14 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         throw new Error(data.error);
       }
 
+      if (user) {
+        clearDisciplinaSessionCache(user.id, discipline.id);
+      }
       setJoined(true);
       setActiveDiscipline(null);
+      if (user) {
+        writeJoinedToSession(user.id, discipline.id, true, null);
+      }
     } catch (err) {
       console.error("Join error:", err);
     } finally {
@@ -208,7 +237,13 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         throw new Error(data.error);
       }
 
+      if (user) {
+        clearDisciplinaSessionCache(user.id, discipline.id);
+      }
       setJoined(false);
+      if (user) {
+        writeJoinedToSession(user.id, discipline.id, false, null);
+      }
     } catch (err) {
       console.error("Stop error:", err);
       alert("Errore nel bloccare il percorso. Riprova.");
