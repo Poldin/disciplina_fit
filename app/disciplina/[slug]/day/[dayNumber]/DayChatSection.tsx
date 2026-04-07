@@ -11,6 +11,7 @@ import {
   X,
   MoreHorizontal,
   Flag,
+  MessageSquare,
 } from "lucide-react";
 import { createClient } from "@/app/utils/supabase/client";
 import { useAuth } from "@/app/components/AuthProvider";
@@ -474,9 +475,17 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
                         />
                       ) : (
                         <>
-                          <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
-                            {msg.content}
-                          </p>
+                          <div className="mt-1 flex gap-2.5 items-start min-w-0">
+                            <MessageSquare
+                              className="shrink-0 text-zinc-400 dark:text-zinc-500 mt-0.5"
+                              size={16}
+                              strokeWidth={1.75}
+                              aria-hidden
+                            />
+                            <p className="flex-1 min-w-0 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
+                              {msg.content}
+                            </p>
+                          </div>
                           {msg.updated_at && (
                             <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">modificato</span>
                           )}
@@ -540,9 +549,17 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
                                 />
                               ) : (
                                 <>
-                                  <p className="mt-0.5 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
-                                    {reply.content}
-                                  </p>
+                                  <div className="mt-0.5 flex gap-2 items-start min-w-0">
+                                    <MessageSquare
+                                      className="shrink-0 text-zinc-400 dark:text-zinc-500 mt-px"
+                                      size={14}
+                                      strokeWidth={1.75}
+                                      aria-hidden
+                                    />
+                                    <p className="flex-1 min-w-0 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
+                                      {reply.content}
+                                    </p>
+                                  </div>
                                   {reply.updated_at && (
                                     <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">modificato</span>
                                   )}
