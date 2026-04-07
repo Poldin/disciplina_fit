@@ -2,6 +2,7 @@
 
 import { useParams } from "next/navigation";
 import DayPageSkeleton from "./DayPageSkeleton";
+import { peekDayPageShellPrefill } from "@/app/utils/dayPageShellMemory";
 
 /** Mostrato durante la navigazione finché il Server Component non ha finito (auth + contenuto giorno). */
 export default function DisciplinaDayLoading() {
@@ -15,5 +16,10 @@ export default function DisciplinaDayLoading() {
   const parsed = Number.parseInt(dayStr, 10);
   const dayNumber = Number.isFinite(parsed) && parsed >= 1 ? parsed : 1;
 
-  return <DayPageSkeleton slug={slug || "—"} dayNumber={dayNumber} />;
+  const shell =
+    slug && dayNumber >= 1 ? peekDayPageShellPrefill(slug, dayNumber) : null;
+
+  return (
+    <DayPageSkeleton slug={slug || "—"} dayNumber={dayNumber} shell={shell} />
+  );
 }

@@ -547,6 +547,8 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         <NotificationPlanTimeline
           disciplineSlug={discipline.slug}
           disciplineId={discipline.id}
+          disciplineTitle={discipline.title}
+          lenghtDays={discipline.lenght_days}
           notificationPlan={discipline.notification_plan}
           joined={joined}
         />

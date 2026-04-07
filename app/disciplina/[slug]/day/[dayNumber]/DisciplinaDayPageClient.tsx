@@ -1,12 +1,14 @@
 "use client";
 
-import Link from "next/link";
+import { useEffect } from "react";
 import Footer from "@/app/components/Footer";
 import DayMessagesMarkdown from "./DayMessagesMarkdown";
 import DayBlocks from "./DayBlocks";
 import DayChatSection from "@/app/disciplina/[slug]/day/[dayNumber]/DayChatSection";
+import DisciplinaDayPageChrome from "./DisciplinaDayPageChrome";
 import type { DayContentSegment } from "@/app/utils/disciplineDayContent";
 import type { DayPagePathProgress } from "@/app/utils/disciplinePathProgress";
+import { clearDayPageShellPrefill } from "@/app/utils/dayPageShellMemory";
 import { messageScheduleCaption } from "@/app/utils/messageScheduleCaption";
 
 type Props = {
@@ -31,57 +33,21 @@ export default function DisciplinaDayPageClient({
   scheduleCalendarDateLabel,
   userName,
 }: Props) {
-  const backLabel = disciplineTitle ?? slug;
+  useEffect(() => {
+    clearDayPageShellPrefill(slug, dayNumber);
+  }, [slug, dayNumber]);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
       <div className="mx-auto max-w-2xl px-1 py-10 sm:py-14 sm:px-6 lg:px-8">
-        <header className="mb-6 flex flex-col gap-6 sm:mb-12 sm:gap-8">
-          <Link
-            href={`/disciplina/${encodeURIComponent(slug)}`}
-            className="self-start text-base font-semibold leading-snug tracking-tight text-zinc-700 underline-offset-4 hover:underline dark:text-zinc-300 sm:text-lg"
-          >
-            ← {backLabel}
-          </Link>
-          <div className="flex flex-col items-center gap-1">
-            {scheduleCalendarDateLabel ? (
-              <p
-                className="text-center text-[11px] font-normal tracking-normal text-zinc-400 dark:text-zinc-500 sm:text-xs"
-                aria-label={`Data nel piano: ${scheduleCalendarDateLabel}`}
-              >
-                {scheduleCalendarDateLabel}
-              </p>
-            ) : null}
-            <h1
-              className="text-center text-4xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums dark:text-zinc-50 sm:text-5xl md:text-6xl"
-              aria-label={`Giorno ${dayNumber}`}
-            >
-              GIORNO #{dayNumber}
-            </h1>
-            {pathProgress ? (
-              <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
-                {pathProgress.remaining > 0 ? (
-                  pathProgress.remaining === 1 ? (
-                    <>
-                      ti manca 1 giorno
-                      {userName ? `, ${userName}` : ""}
-                    </>
-                  ) : (
-                    <>
-                      ti mancano {pathProgress.remaining} giorni
-                      {userName ? `, ${userName}` : ""}
-                    </>
-                  )
-                ) : (
-                  <>
-                    Percorso completato
-                    {userName ? `, ${userName}` : ""}
-                  </>
-                )}
-              </p>
-            ) : null}
-          </div>
-        </header>
+        <DisciplinaDayPageChrome
+          slug={slug}
+          dayNumber={dayNumber}
+          disciplineTitle={disciplineTitle}
+          scheduleCalendarDateLabel={scheduleCalendarDateLabel}
+          pathProgress={pathProgress}
+          userName={userName}
+        />
 
         {segments.length === 0 ? (
           <p className="text-zinc-600 dark:text-zinc-400">

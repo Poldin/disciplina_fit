@@ -1,29 +1,31 @@
-import Link from "next/link";
+import type { DayPageShellPrefill } from "@/app/utils/dayPageShellMemory";
+import DisciplinaDayPageChrome from "./DisciplinaDayPageChrome";
 
 export default function DayPageSkeleton({
   slug,
   dayNumber,
+  shell,
 }: {
   slug: string;
   dayNumber: number;
+  /** Dati già noti dalla pagina disciplina (timeline); evita header “vuoto” durante il fetch RSC. */
+  shell: DayPageShellPrefill | null;
 }) {
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-50">
       <div className="mx-auto max-w-2xl px-1 py-10 sm:py-14 sm:px-6 lg:px-8">
-        <header className="mb-10 flex flex-col gap-6 sm:mb-12 sm:gap-8">
-          <Link
-            href={`/disciplina/${encodeURIComponent(slug)}`}
-            className="self-start text-base font-semibold leading-snug tracking-tight text-zinc-700 underline-offset-4 hover:underline dark:text-zinc-300 sm:text-lg"
-          >
-            ← indietro
-          </Link>
-          <div className="flex flex-col items-center gap-1" aria-hidden>
-            <div className="text-center text-4xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums dark:text-zinc-50 sm:text-5xl md:text-6xl">
-              GIORNO {dayNumber}
-            </div>
-            <div className="h-3 w-48 max-w-[90%] animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
-          </div>
-        </header>
+        <DisciplinaDayPageChrome
+          slug={slug}
+          dayNumber={dayNumber}
+          disciplineTitle={shell?.disciplineTitle ?? null}
+          scheduleCalendarDateLabel={shell?.scheduleCalendarDateLabel ?? null}
+          pathProgress={
+            shell?.pathProgressRemaining != null
+              ? { remaining: shell.pathProgressRemaining }
+              : null
+          }
+          userName={shell?.userName ?? null}
+        />
         <div className="space-y-4" aria-hidden>
           {[0, 1].map((i) => (
             <div

@@ -1,7 +1,13 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  /* Riduce attese su navigazione indietro/avanti: riuso payload RSC in cache (secondi). */
+  experimental: {
+    staleTimes: {
+      dynamic: 120,
+      static: 180,
+    },
+  },
 };
 
 export default nextConfig;

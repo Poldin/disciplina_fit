@@ -6,11 +6,16 @@ import { useAuth } from "@/app/components/AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
 import { listNotificationPlanDayPreviews } from "@/app/utils/notificationPlanDisplay";
 import { formatScheduleDayDateItShort } from "@/app/utils/scheduleDayUnlock";
+import { stashDayPageShellPrefill } from "@/app/utils/dayPageShellMemory";
+import { computeDayPagePathProgress } from "@/app/utils/disciplinePathProgress";
 import { stashDisciplinaListScroll } from "@/app/utils/disciplinaScrollMemory";
 
 type Props = {
   disciplineSlug: string;
   disciplineId: string;
+  /** Titolo disciplina (per header pagina giorno durante il loading). */
+  disciplineTitle: string | null;
+  lenghtDays: number | null;
   notificationPlan: unknown;
   /** Utente iscritto a questa disciplina con link attivo */
   joined: boolean;
@@ -19,10 +24,12 @@ type Props = {
 export default function NotificationPlanTimeline({
   disciplineSlug,
   disciplineId,
+  disciplineTitle,
+  lenghtDays,
   notificationPlan,
   joined,
 }: Props) {
-  const { user } = useAuth();
+  const { user, userName } = useAuth();
   const days = useMemo(
     () => listNotificationPlanDayPreviews(notificationPlan),
     [notificationPlan]
@@ -191,7 +198,20 @@ export default function NotificationPlanTimeline({
                 {open ? (
                   <Link
                     href={href}
-                    onClick={() => stashDisciplinaListScroll(disciplineSlug)}
+                    onClick={() => {
+                      stashDisciplinaListScroll(disciplineSlug);
+                      const progress = computeDayPagePathProgress(
+                        notificationPlan,
+                        lenghtDays,
+                        dayNumber
+                      );
+                      stashDayPageShellPrefill(disciplineSlug, dayNumber, {
+                        disciplineTitle,
+                        scheduleCalendarDateLabel: calendarLabel,
+                        pathProgressRemaining: progress?.remaining ?? null,
+                        userName: user ? userName : null,
+                      });
+                    }}
                     className="group flex flex-1 gap-4 rounded-xl border border-transparent p-3 -m-3 transition-all hover:border-emerald-200/90 hover:bg-emerald-50/70 hover:shadow-sm dark:hover:border-emerald-500/25 dark:hover:bg-emerald-950/35 sm:gap-5 focus:outline-none focus-visible:border-emerald-300 focus-visible:ring-2 focus-visible:ring-emerald-400/60 dark:focus-visible:border-emerald-500/40 dark:focus-visible:ring-emerald-500/40"
                   >
                     {inner}
