@@ -16,6 +16,8 @@ type Props = {
   disciplineTitle: string | null;
   segments: DayContentSegment[];
   pathProgress: DayPagePathProgress | null;
+  /** Data calendario del giorno nel piano (UTC), come su pagina disciplina */
+  scheduleCalendarDateLabel: string | null;
   userName: string | null;
 };
 
@@ -26,6 +28,7 @@ export default function DisciplinaDayPageClient({
   disciplineTitle,
   segments,
   pathProgress,
+  scheduleCalendarDateLabel,
   userName,
 }: Props) {
   const backLabel = disciplineTitle ?? slug;
@@ -41,6 +44,14 @@ export default function DisciplinaDayPageClient({
             ← {backLabel}
           </Link>
           <div className="flex flex-col items-center gap-1">
+            {scheduleCalendarDateLabel ? (
+              <p
+                className="text-center text-[11px] font-normal tracking-normal text-zinc-400 dark:text-zinc-500 sm:text-xs"
+                aria-label={`Data nel piano: ${scheduleCalendarDateLabel}`}
+              >
+                {scheduleCalendarDateLabel}
+              </p>
+            ) : null}
             <h1
               className="text-center text-4xl font-bold leading-none tracking-tight text-zinc-900 tabular-nums dark:text-zinc-50 sm:text-5xl md:text-6xl"
               aria-label={`Giorno ${dayNumber}`}

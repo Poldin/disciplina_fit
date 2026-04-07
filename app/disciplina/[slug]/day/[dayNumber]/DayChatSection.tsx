@@ -429,23 +429,22 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
         condividi con chi arriverà qui dopo di te
       </p>
 
-      <div className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/80 shadow-sm overflow-hidden">
-        <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
-          {loading ? (
-            <div className="px-5 py-10 text-center text-sm text-zinc-400">Caricamento...</div>
-          ) : messages.length === 0 ? (
-            <div className="px-5 py-10 text-center text-sm text-zinc-400">
-              Nessun messaggio ancora — inizia tu!
-            </div>
-          ) : (
-            messages.map((msg) => {
+      <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+        {loading ? (
+          <div className="py-10 text-center text-sm text-zinc-400">Caricamento...</div>
+        ) : messages.length === 0 ? (
+          <div className="py-10 text-center text-sm text-zinc-400">
+            Nessun messaggio ancora — inizia tu!
+          </div>
+        ) : (
+          messages.map((msg) => {
               const isOpen = openReplyId === msg.id;
               const replyCount = msg.replies.length;
               const isOwn = msg.user_id === user?.id;
               const isEditing = editingId === msg.id;
 
               return (
-                <div key={msg.id} className="px-5 py-4 space-y-3">
+                <div key={msg.id} className="py-4 space-y-3">
                   <div className="flex gap-3">
                     <div className="w-8 h-8 shrink-0 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-xs font-bold text-zinc-600 dark:text-zinc-300">
                       {displayName(msg.user_id, msg.userName).charAt(0).toUpperCase()}
@@ -596,33 +595,30 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
                 </div>
               );
             })
-          )}
-        </div>
+        )}
 
         {/* New message input */}
         {!userHasTopLevel && (
-          <div className="px-5 py-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/40">
-            <div className="space-y-2">
-              <textarea
-                value={newContent}
-                onChange={(e) => setNewContent(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submitMessage(); }
-                }}
-                placeholder="scrivi qui"
-                rows={3}
-                className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-4 py-3 text-sm text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 resize-none focus:outline-none focus:ring-1 focus:ring-zinc-400 dark:focus:ring-zinc-600"
-              />
-              {error && <p className="text-xs text-red-500">{error}</p>}
-              <div className="flex justify-end">
-                <button
-                  onClick={() => void submitMessage()}
-                  disabled={!newContent.trim() || submittingNew}
-                  className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors disabled:opacity-40"
-                >
-                  {submittingNew ? "Pubblicazione..." : "Pubblica"}
-                </button>
-              </div>
+          <div className="pt-6 space-y-2">
+            <textarea
+              value={newContent}
+              onChange={(e) => setNewContent(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submitMessage(); }
+              }}
+              placeholder="scrivi qui"
+              rows={4}
+              className="w-full min-h-30 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800/60 px-4 py-3 text-base text-zinc-800 dark:text-zinc-200 placeholder-zinc-400 resize-y focus:outline-none focus:ring-2 focus:ring-zinc-400/80 dark:focus:ring-zinc-600/80 sm:text-sm"
+            />
+            {error && <p className="text-xs text-red-500">{error}</p>}
+            <div className="flex justify-end">
+              <button
+                onClick={() => void submitMessage()}
+                disabled={!newContent.trim() || submittingNew}
+                className="px-4 py-2 rounded-lg bg-zinc-900 dark:bg-zinc-100 text-sm font-semibold text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 transition-colors disabled:opacity-40"
+              >
+                {submittingNew ? "Pubblicazione..." : "Pubblica"}
+              </button>
             </div>
           </div>
         )}

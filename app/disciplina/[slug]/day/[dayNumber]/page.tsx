@@ -45,6 +45,7 @@ export default async function DisciplinaDayPage({
       disciplineTitle={result.disciplineTitle}
       segments={result.segments}
       pathProgress={result.pathProgress}
+      scheduleCalendarDateLabel={result.scheduleCalendarDateLabel}
       userName={userName}
     />
   );

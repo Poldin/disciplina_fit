@@ -34,5 +34,6 @@ export async function GET(request: NextRequest) {
     disciplineTitle: result.disciplineTitle,
     segments: result.segments,
     pathProgress: result.pathProgress,
+    scheduleCalendarDateLabel: result.scheduleCalendarDateLabel,
   });
 }

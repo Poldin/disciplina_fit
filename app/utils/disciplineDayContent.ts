@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/app/utils/supabase/admin";
 import { markDayNotificationOpened } from "@/app/utils/markDayNotificationOpened";
-import { isScheduleDayUnlockedByUtcCalendar } from "@/app/utils/scheduleDayUnlock";
+import {
+  formatScheduleDayDateItShort,
+  isScheduleDayUnlockedByUtcCalendar,
+} from "@/app/utils/scheduleDayUnlock";
 import {
   computeDayPagePathProgress,
   type DayPagePathProgress,
@@ -34,6 +37,8 @@ export type LoadDisciplineDayContentResult =
       disciplineTitle: string | null;
       segments: DayContentSegment[];
       pathProgress: DayPagePathProgress | null;
+      /** Data calendario UTC del piano (primo invio), come nella timeline */
+      scheduleCalendarDateLabel: string | null;
     }
   | { ok: false; kind: "not_found" }
   | { ok: false; kind: "db"; message: string };
@@ -126,11 +131,17 @@ export async function loadDisciplineDayContent(
     dayNum
   );
 
+  const scheduleCalendarDateLabel =
+    earliestIso != null && earliestIso !== ""
+      ? formatScheduleDayDateItShort(earliestIso)
+      : null;
+
   return {
     ok: true,
     disciplineId: discipline.id as string,
     disciplineTitle: discipline.title,
     segments,
     pathProgress,
+    scheduleCalendarDateLabel,
   };
 }
