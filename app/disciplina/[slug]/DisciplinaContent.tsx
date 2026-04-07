@@ -638,7 +638,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             </h3>
 
             {/* Card della disciplina attiva */}
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 mb-4">
+            <div className="flex items-center gap-3 p-1 rounded-xl bg-zinc-100 dark:bg-zinc-800 mb-4">
               {activeDiscipline.img_url ? (
                 <div className="w-12 h-12 rounded-lg overflow-hidden shrink-0">
                   <img
