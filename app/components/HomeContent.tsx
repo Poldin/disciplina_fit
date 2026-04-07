@@ -381,10 +381,10 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 </svg>
               </div>
               <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50 mb-2">
-                2. Ricevi supporto su WhatsApp
+                2. Ricevi mail e notifiche di supporto quotidiane
               </h3>
               <p className="text-zinc-600 dark:text-zinc-400">
-                Ogni giorno ti inviamo messaggi motivazionali per tenerti sulla strada giusta e non mollare mai.
+                Ogni giorno ti inviamo messaggi per informarti e motivarti per tenerti sulla strada giusta e non mollare mai.
               </p>
             </div>
 
