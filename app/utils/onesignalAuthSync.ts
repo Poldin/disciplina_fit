@@ -2,7 +2,6 @@
 
 type OneSignalSdk = {
   login: (externalId: string) => Promise<void>;
-  logout: () => Promise<void>;
 };
 
 /**
@@ -20,9 +19,9 @@ export function syncOneSignalAuthUser(userId: string | null) {
     try {
       if (userId) {
         await OneSignal.login(userId);
-      } else {
-        await OneSignal.logout();
       }
+      // Il logout dall'app non de-linka la subscription OneSignal:
+      // l'utente controlla le notifiche solo tramite il toggle esplicito.
     } catch (e) {
       console.warn("[OneSignal] sync auth user failed:", e);
     }

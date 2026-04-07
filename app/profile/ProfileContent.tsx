@@ -8,6 +8,9 @@ import LoginDialog from "@/app/components/LoginDialog";
 import SubscriptionSection from "@/app/components/SubscriptionSection";
 import { useAuth } from "@/app/components/AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
+import PushNotificationToggle from "@/app/components/PushNotificationToggle";
+
+const oneSignalEnabled = Boolean(process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID);
 
 function formatActivationDate(iso: string) {
   return new Date(iso).toLocaleDateString("it-IT", {
@@ -106,6 +109,15 @@ export default function ProfileContent() {
         <div className="mb-10">
           <SubscriptionSection />
         </div>
+
+        {oneSignalEnabled && (
+          <div className="mb-10 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/40 p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">
+              Notifiche
+            </h2>
+            <PushNotificationToggle oneSignalEnabled={oneSignalEnabled} />
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row gap-3">
           <button
