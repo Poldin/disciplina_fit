@@ -9,6 +9,7 @@ import { useAuth } from "./AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
 import type { Discipline } from "@/app/utils/types";
 import { computeJoinedPathProgress } from "@/app/utils/disciplinePathProgress";
+import { formatScheduleDayDateItShort } from "@/app/utils/scheduleDayUnlock";
 import { isSubscriptionRequired } from "@/app/utils/subscriptionRequired";
 
 interface HomeContentProps {
@@ -21,6 +22,8 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   const [joinedDisciplineIds, setJoinedDisciplineIds] = useState<Set<string>>(new Set());
   const [activeDiscipline, setActiveDiscipline] = useState<Discipline | null>(null);
   const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
+  /** Primo invio giorno 1 (UTC), stesso criterio della timeline disciplina */
+  const [pathStartIso, setPathStartIso] = useState<string | null>(null);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
 
   const activeProgress = useMemo(() => {
@@ -79,6 +82,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   useEffect(() => {
     if (!user || !activeDiscipline) {
       setSentDayNumbers([]);
+      setPathStartIso(null);
       return;
     }
     let cancelled = false;
@@ -86,11 +90,22 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       `/api/disciplines/sent-days?disciplineId=${encodeURIComponent(activeDiscipline.id)}`
     )
       .then((res) => res.json())
-      .then((data: { sentDayNumbers?: number[] }) => {
-        if (!cancelled) setSentDayNumbers(data.sentDayNumbers ?? []);
-      })
+      .then(
+        (data: {
+          sentDayNumbers?: number[];
+          dayFirstSendUtc?: Record<string, string>;
+        }) => {
+          if (cancelled) return;
+          setSentDayNumbers(data.sentDayNumbers ?? []);
+          const d1 = data.dayFirstSendUtc?.["1"];
+          setPathStartIso(typeof d1 === "string" && d1 ? d1 : null);
+        }
+      )
       .catch(() => {
-        if (!cancelled) setSentDayNumbers([]);
+        if (!cancelled) {
+          setSentDayNumbers([]);
+          setPathStartIso(null);
+        }
       });
     return () => {
       cancelled = true;
@@ -177,7 +192,13 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                         </span>
                       )}
                     </p>
-                  ) : activeDiscipline.lenght_days ? (
+                  ) : null}
+                  {activeProgress && pathStartIso ? (
+                    <p className="text-[11px] font-normal tracking-normal text-zinc-400 dark:text-zinc-500 mt-1 sm:text-xs">
+                      Partenza · {formatScheduleDayDateItShort(pathStartIso)}
+                    </p>
+                  ) : null}
+                  {!activeProgress && activeDiscipline.lenght_days ? (
                     <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
                       {activeDiscipline.lenght_days} giorni
                     </p>

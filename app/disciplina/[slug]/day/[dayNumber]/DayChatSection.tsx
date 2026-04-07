@@ -416,7 +416,13 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
           100% { transform: scale(1) rotate(0deg); }
         }
       `}</style>
-      <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1">
+      <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-700 dark:text-zinc-300 mb-1 flex items-center gap-2">
+        <MessageSquare
+          className="shrink-0 text-zinc-500 dark:text-zinc-400"
+          size={18}
+          strokeWidth={1.75}
+          aria-hidden
+        />
         Commenti
       </h2>
       <p className="text-xs text-zinc-400 dark:text-zinc-500 mb-4">
@@ -475,17 +481,9 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
                         />
                       ) : (
                         <>
-                          <div className="mt-1 flex gap-2.5 items-start min-w-0">
-                            <MessageSquare
-                              className="shrink-0 text-zinc-400 dark:text-zinc-500 mt-0.5"
-                              size={16}
-                              strokeWidth={1.75}
-                              aria-hidden
-                            />
-                            <p className="flex-1 min-w-0 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
-                              {msg.content}
-                            </p>
-                          </div>
+                          <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
+                            {msg.content}
+                          </p>
                           {msg.updated_at && (
                             <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">modificato</span>
                           )}
@@ -549,17 +547,9 @@ export default function DayChatSection({ disciplineId, dayNumber }: Props) {
                                 />
                               ) : (
                                 <>
-                                  <div className="mt-0.5 flex gap-2 items-start min-w-0">
-                                    <MessageSquare
-                                      className="shrink-0 text-zinc-400 dark:text-zinc-500 mt-px"
-                                      size={14}
-                                      strokeWidth={1.75}
-                                      aria-hidden
-                                    />
-                                    <p className="flex-1 min-w-0 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
-                                      {reply.content}
-                                    </p>
-                                  </div>
+                                  <p className="mt-0.5 text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap wrap-break-word">
+                                    {reply.content}
+                                  </p>
                                   {reply.updated_at && (
                                     <span className="text-xs text-zinc-400 dark:text-zinc-500 italic">modificato</span>
                                   )}
