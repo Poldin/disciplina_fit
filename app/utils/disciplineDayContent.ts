@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAdminClient } from "@/app/utils/supabase/admin";
 import { markDayNotificationOpened } from "@/app/utils/markDayNotificationOpened";
+import { isScheduleDayUnlockedByUtcCalendar } from "@/app/utils/scheduleDayUnlock";
 import {
   computeDayPagePathProgress,
   type DayPagePathProgress,
@@ -83,6 +84,16 @@ export async function loadDisciplineDayContent(
 
   const list = (rows ?? []) as ScheduleRow[];
   if (list.length === 0) {
+    return { ok: false, kind: "not_found" };
+  }
+
+  let earliestIso: string | null = null;
+  for (const r of list) {
+    const iso = r.send_time_utc;
+    if (iso == null || iso === "") continue;
+    if (earliestIso == null || iso < earliestIso) earliestIso = iso;
+  }
+  if (!isScheduleDayUnlockedByUtcCalendar(earliestIso, new Date())) {
     return { ok: false, kind: "not_found" };
   }
 

@@ -5,7 +5,7 @@ export type DayPagePathProgress = {
   remaining: number;
 };
 
-/** Progresso iscrizione: giorni con almeno un invio effettuato vs totale (come sulla home). */
+/** Progresso iscrizione: giorni già accessibili (calendario) vs totale (come sulla home). */
 export type JoinedPathProgress = {
   completed: number;
   total: number;

@@ -84,8 +84,8 @@ export default function NotificationPlanTimeline({
         Il tuo percorso
       </h2>
       <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-8">
-        Ogni giorno apre un messaggio quando almeno una notifica di quel giorno è
-        stata inviata.
+        Ogni giorno si sblocca nel giorno di calendario previsto dal piano (come la
+        data del messaggio programmato), anche prima che parta la notifica.
       </p>
 
       <div className="relative">
@@ -132,7 +132,7 @@ export default function NotificationPlanTimeline({
                   )}
                   {!open && (
                     <p className="mt-2 text-xs text-zinc-400 dark:text-zinc-500">
-                      Si apre dopo il primo invio del giorno
+                      Si apre il giorno previsto dal piano
                     </p>
                   )}
                   {(commentCounts[dayNumber] ?? 0) > 0 && (
