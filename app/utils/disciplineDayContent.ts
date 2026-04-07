@@ -131,10 +131,11 @@ export async function loadDisciplineDayContent(
     dayNum
   );
 
-  const scheduleCalendarDateLabel =
+  const formatted =
     earliestIso != null && earliestIso !== ""
       ? formatScheduleDayDateItShort(earliestIso)
-      : null;
+      : "";
+  const scheduleCalendarDateLabel = formatted !== "" ? formatted : null;
 
   return {
     ok: true,
