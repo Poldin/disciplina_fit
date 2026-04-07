@@ -631,10 +631,10 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
 
       {/* Replace Dialog — c'è già una disciplina attiva */}
       {isReplaceOpen && activeDiscipline && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-6 border border-zinc-200 dark:border-zinc-800">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl max-w-md w-full p-4 border border-zinc-200 dark:border-zinc-800">
             <h3 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-4">
-              Hai già una disciplina attiva
+              Hai già una disciplina attiva, vuoi davvero procedere?
             </h3>
 
             {/* Card della disciplina attiva */}
@@ -661,7 +661,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             <p className="text-zinc-700 dark:text-zinc-300 mb-2 text-sm leading-relaxed">
               Stai già seguendo una disciplina. Focalizzati su una alla volta per ottenere risultati veri.
             </p>
-            <p className="text-zinc-600 dark:text-zinc-400 mb-6 text-xs leading-relaxed">
+            <p className="text-zinc-600 dark:text-zinc-400 mb-6 text-sm leading-relaxed">
               Se vuoi puoi procedere con la nuova disciplina: bloccheremo quella attuale in automatico.
             </p>
 
