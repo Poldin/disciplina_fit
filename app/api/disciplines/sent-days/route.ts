@@ -21,7 +21,10 @@ export async function GET(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    return NextResponse.json({ sentDayNumbers: [] as number[] });
+    return NextResponse.json({
+      sentDayNumbers: [] as number[],
+      dayFirstSendUtc: {} as Record<string, string>,
+    });
   }
 
   const admin = createAdminClient();
@@ -34,7 +37,10 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   if (!link) {
-    return NextResponse.json({ sentDayNumbers: [] as number[] });
+    return NextResponse.json({
+      sentDayNumbers: [] as number[],
+      dayFirstSendUtc: {} as Record<string, string>,
+    });
   }
 
   const { data: rows } = await admin
@@ -60,5 +66,10 @@ export async function GET(request: NextRequest) {
     .map(([dn]) => dn)
     .sort((a, b) => a - b);
 
-  return NextResponse.json({ sentDayNumbers: unlockedDays });
+  const dayFirstSendUtc: Record<string, string> = {};
+  for (const [dn, iso] of earliestByDay) {
+    dayFirstSendUtc[String(dn)] = iso;
+  }
+
+  return NextResponse.json({ sentDayNumbers: unlockedDays, dayFirstSendUtc });
 }

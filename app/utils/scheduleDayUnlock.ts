@@ -22,3 +22,18 @@ export function isScheduleDayUnlockedByUtcCalendar(
   if (Number.isNaN(send.getTime())) return false;
   return utcCalendarDayKey(now) >= utcCalendarDayKey(send);
 }
+
+/**
+ * Data del calendario UTC del primo invio programmato, in breve (es. "1 apr 2026").
+ * Allineato a `isScheduleDayUnlockedByUtcCalendar` (stesso giorno UTC del piano).
+ */
+export function formatScheduleDayDateItShort(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleDateString("it-IT", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}

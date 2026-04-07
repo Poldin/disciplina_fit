@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/app/components/AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
 import { listNotificationPlanDayPreviews } from "@/app/utils/notificationPlanDisplay";
+import { formatScheduleDayDateItShort } from "@/app/utils/scheduleDayUnlock";
 
 type Props = {
   disciplineSlug: string;
@@ -26,11 +27,16 @@ export default function NotificationPlanTimeline({
     [notificationPlan]
   );
   const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
+  /** ISO primo invio del giorno (stesso criterio dello sblocco, calendario UTC) */
+  const [dayFirstSendUtc, setDayFirstSendUtc] = useState<Record<number, string>>(
+    {}
+  );
   const [commentCounts, setCommentCounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
     if (!user || !joined) {
       setSentDayNumbers([]);
+      setDayFirstSendUtc({});
       return;
     }
     let cancelled = false;
@@ -38,11 +44,27 @@ export default function NotificationPlanTimeline({
       `/api/disciplines/sent-days?disciplineId=${encodeURIComponent(disciplineId)}`
     )
       .then((res) => res.json())
-      .then((data: { sentDayNumbers?: number[] }) => {
-        if (!cancelled) setSentDayNumbers(data.sentDayNumbers ?? []);
-      })
+      .then(
+        (data: {
+          sentDayNumbers?: number[];
+          dayFirstSendUtc?: Record<string, string>;
+        }) => {
+          if (cancelled) return;
+          setSentDayNumbers(data.sentDayNumbers ?? []);
+          const next: Record<number, string> = {};
+          const raw = data.dayFirstSendUtc ?? {};
+          for (const [k, v] of Object.entries(raw)) {
+            const n = Number(k);
+            if (Number.isFinite(n) && typeof v === "string" && v) next[n] = v;
+          }
+          setDayFirstSendUtc(next);
+        }
+      )
       .catch(() => {
-        if (!cancelled) setSentDayNumbers([]);
+        if (!cancelled) {
+          setSentDayNumbers([]);
+          setDayFirstSendUtc({});
+        }
       });
     return () => {
       cancelled = true;
@@ -88,7 +110,7 @@ export default function NotificationPlanTimeline({
         data del messaggio programmato), anche prima che parta la notifica.
       </p>
 
-      <div className="relative">
+      <div className="relative isolate">
         <div
           className="absolute left-[15px] top-3 bottom-3 z-0 w-px bg-zinc-200 dark:bg-zinc-700 sm:left-[19px]"
           aria-hidden
@@ -97,6 +119,11 @@ export default function NotificationPlanTimeline({
           {days.map(({ dayNumber, preview }) => {
             const open = unlocked.has(dayNumber);
             const href = `${base}/${dayNumber}`;
+            const scheduleIso = dayFirstSendUtc[dayNumber];
+            const calendarLabel =
+              joined && scheduleIso
+                ? formatScheduleDayDateItShort(scheduleIso)
+                : null;
 
             const inner = (
               <>
@@ -111,13 +138,27 @@ export default function NotificationPlanTimeline({
                 </div>
                 <div className="min-w-0 flex-1 pt-0.5 sm:pt-1">
                   {open ? (
-                    <span className="mb-2 inline-flex items-center rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold tracking-wide text-zinc-900 dark:bg-zinc-200 dark:text-zinc-900">
-                      Giorno {dayNumber}
-                    </span>
+                    <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="inline-flex items-center rounded-md bg-zinc-100 px-2.5 py-1 text-xs font-semibold tracking-wide text-zinc-900 dark:bg-zinc-200 dark:text-zinc-900">
+                        Giorno {dayNumber}
+                      </span>
+                      {calendarLabel ? (
+                        <span className="text-[11px] font-normal tracking-normal text-zinc-400 dark:text-zinc-500 sm:text-xs">
+                          {calendarLabel}
+                        </span>
+                      ) : null}
+                    </div>
                   ) : (
-                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                      Giorno {dayNumber}
-                    </p>
+                    <div className="mb-1 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                        Giorno {dayNumber}
+                      </p>
+                      {calendarLabel ? (
+                        <span className="text-[11px] font-normal normal-case tracking-normal text-zinc-400 dark:text-zinc-500 sm:text-xs">
+                          {calendarLabel}
+                        </span>
+                      ) : null}
+                    </div>
                   )}
                   {preview ? (
                     <p
