@@ -76,21 +76,32 @@ type Phase = "idle" | "pwa" | "notifications";
 
 interface PwaNotificationsFlowProps {
   oneSignalEnabled: boolean;
+  /** Se false o undefined il dialog notifiche non viene mostrato (utente non loggato). */
+  isLoggedIn?: boolean;
 }
 
 export default function PwaNotificationsFlow({
   oneSignalEnabled,
+  isLoggedIn,
 }: PwaNotificationsFlowProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [installReady, setInstallReady] = useState(false);
   const deferredPromptRef = useRef<InstallPromptEvent | null>(null);
   const oneSignalEnabledRef = useRef(oneSignalEnabled);
   oneSignalEnabledRef.current = oneSignalEnabled;
+  const isLoggedInRef = useRef(isLoggedIn);
+  isLoggedInRef.current = isLoggedIn;
 
   const tryOpenNotificationsRef = useRef<() => void>(() => {});
 
   tryOpenNotificationsRef.current = () => {
     if (!oneSignalEnabledRef.current) {
+      setPhase("idle");
+      return;
+    }
+    // Il dialog notifiche richiede login: senza utente loggato non ha senso
+    // chiedere il consenso perché la subscription resterebbe anonima.
+    if (!isLoggedInRef.current) {
       setPhase("idle");
       return;
     }
@@ -153,6 +164,15 @@ export default function PwaNotificationsFlow({
       window.removeEventListener("appinstalled", onInstalled);
     };
   }, []);
+
+  // Quando l'utente si logga (isLoggedIn passa da false a true) proviamo a
+  // mostrare il prompt notifiche, nel caso in cui il timer iniziale fosse
+  // già scaduto prima del login.
+  useEffect(() => {
+    if (isLoggedIn) {
+      tryOpenNotificationsRef.current();
+    }
+  }, [isLoggedIn]);
 
   const finishPwaStep = () => {
     setDismissed(STORAGE_PWA_DISMISSED);

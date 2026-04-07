@@ -2,10 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "./components/AuthProvider";
 import OneSignalInit from "./components/OneSignalInit";
-import PwaNotificationsFlow from "./components/PwaNotificationsFlow";
+import AuthenticatedPwaFlow from "./components/AuthenticatedPwaFlow";
 import ProfileNameGate from "./components/ProfileNameGate";
-
-const oneSignalEnabled = Boolean(process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID);
 import "./globals.css";
 
 const geistSans = Geist({
@@ -39,8 +37,8 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <OneSignalInit />
-        <PwaNotificationsFlow oneSignalEnabled={oneSignalEnabled} />
         <AuthProvider>
+          <AuthenticatedPwaFlow />
           <ProfileNameGate>{children}</ProfileNameGate>
         </AuthProvider>
       </body>
