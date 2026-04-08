@@ -123,8 +123,7 @@ export default function NotificationPlanTimeline({
         Il tuo percorso
       </h2>
       <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-8">
-        Ogni giorno si sblocca nel giorno di calendario previsto dal piano (come la
-        data del messaggio programmato), anche prima che parta la notifica.
+        Ogni giorno si sblocca nel giorno di calendario previsto dalla disciplina
       </p>
 
       <div className="relative isolate">
