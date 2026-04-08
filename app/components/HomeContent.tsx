@@ -18,6 +18,7 @@ interface HomeContentProps {
 
 type CompletionDialogData = {
   id: number;
+  discipline_id: string;
   completed_at: string | null;
   disciplines:
     | {
@@ -58,6 +59,10 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   const [pathStartIso, setPathStartIso] = useState<string | null>(null);
   const [completionDialog, setCompletionDialog] = useState<CompletionDialogData | null>(null);
   const [isClosingCompletionDialog, setIsClosingCompletionDialog] = useState(false);
+  const [reviewRating, setReviewRating] = useState<number>(0);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewIsPublic, setReviewIsPublic] = useState(true);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const [completedAtBySlug, setCompletedAtBySlug] = useState<Record<string, string>>({});
   const [selectedBadge, setSelectedBadge] = useState<{
     title: string;
@@ -145,6 +150,20 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   }, [user?.id]);
 
   useEffect(() => {
+    if (!completionDialog) {
+      setReviewRating(0);
+      setReviewComment("");
+      setReviewIsPublic(true);
+      setReviewError(null);
+      return;
+    }
+    setReviewRating(5);
+    setReviewComment("");
+    setReviewIsPublic(true);
+    setReviewError(null);
+  }, [completionDialog?.id]);
+
+  useEffect(() => {
     if (!user) {
       setCompletedAtBySlug({});
       return;
@@ -182,6 +201,44 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
         body: JSON.stringify({ linkId: completionDialog.id }),
       });
       setCompletionDialog(null);
+    } finally {
+      setIsClosingCompletionDialog(false);
+    }
+  };
+
+  const handleSubmitCompletionReview = async () => {
+    if (!completionDialog) return;
+    if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
+      setReviewError("Seleziona un voto da 1 a 5 stelle.");
+      return;
+    }
+    setIsClosingCompletionDialog(true);
+    setReviewError(null);
+    try {
+      const reviewRes = await fetch("/api/disciplines/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          linkId: completionDialog.id,
+          rating: reviewRating,
+          comment: reviewComment,
+          isPublic: reviewIsPublic,
+        }),
+      });
+      if (!reviewRes.ok) {
+        const data = await reviewRes.json().catch(() => ({}));
+        throw new Error(
+          typeof data.error === "string" ? data.error : "Impossibile salvare la valutazione"
+        );
+      }
+      await fetch("/api/disciplines/completion-seen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkId: completionDialog.id }),
+      });
+      setCompletionDialog(null);
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Errore imprevisto");
     } finally {
       setIsClosingCompletionDialog(false);
     }
@@ -611,14 +668,59 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 : completionDialog.disciplines?.title ?? "la tua disciplina"}
               . Questo traguardo resta nel tuo profilo.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+            <div className="mt-8 w-full max-w-xl rounded-xl border border-zinc-800 bg-zinc-900/60 p-4 text-left">
+              <p className="text-sm font-semibold text-zinc-100">
+                Quanto valuti questo percorso?
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    disabled={isClosingCompletionDialog}
+                    aria-label={`${star} stelle`}
+                    className={`text-2xl transition-colors ${
+                      star <= reviewRating ? "text-amber-300" : "text-zinc-600 hover:text-zinc-400"
+                    }`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+              <label className="mt-4 block text-sm text-zinc-300">
+                Commento (opzionale)
+                <textarea
+                  value={reviewComment}
+                  onChange={(e) => setReviewComment(e.target.value)}
+                  maxLength={500}
+                  disabled={isClosingCompletionDialog}
+                  placeholder="Condividi la tua esperienza..."
+                  className="mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-hidden focus:border-emerald-500"
+                  rows={4}
+                />
+              </label>
+              <label className="mt-3 flex items-center gap-2 text-xs text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={reviewIsPublic}
+                  onChange={(e) => setReviewIsPublic(e.target.checked)}
+                  disabled={isClosingCompletionDialog || reviewComment.trim().length === 0}
+                />
+                Voglio rendere pubblico il commento
+              </label>
+              {reviewError ? (
+                <p className="mt-2 text-xs text-red-300">{reviewError}</p>
+              ) : null}
+            </div>
+            <div className="mt-6 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
               <button
                 type="button"
-                onClick={handleCloseCompletionDialog}
+                onClick={handleSubmitCompletionReview}
                 disabled={isClosingCompletionDialog}
                 className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors disabled:opacity-60"
               >
-                {isClosingCompletionDialog ? "Salvo..." : "Fantastico"}
+                {isClosingCompletionDialog ? "Salvo..." : "Invia valutazione"}
               </button>
               <button
                 type="button"
@@ -626,7 +728,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 disabled={isClosingCompletionDialog}
                 className="px-6 py-3 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-100 transition-colors disabled:opacity-60"
               >
-                Continua
+                Salta
               </button>
             </div>
           </div>

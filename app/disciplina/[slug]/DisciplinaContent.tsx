@@ -50,6 +50,14 @@ type CompletionBadgeData = {
     | null;
 };
 
+type DisciplineReview = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  created_at: string;
+  user_name: string;
+};
+
 interface DisciplinaContentProps {
   discipline: Discipline;
 }
@@ -68,6 +76,11 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [activeDiscipline, setActiveDiscipline] = useState<ActiveDisciplineInfo | null>(null);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
   const [isBadgeOpen, setIsBadgeOpen] = useState(false);
+  const [reviewSummary, setReviewSummary] = useState<{ count: number; avgRating: number | null }>({
+    count: 0,
+    avgRating: null,
+  });
+  const [publicReviews, setPublicReviews] = useState<DisciplineReview[]>([]);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
   /** Disciplina attiva: descrizione lunga in fisarmonica (chiusa di default) */
   const [longDescOpen, setLongDescOpen] = useState(false);
@@ -239,6 +252,32 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       cancelled = true;
     };
   }, [user, joined, discipline.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch(`/api/disciplines/reviews?disciplineId=${encodeURIComponent(discipline.id)}`)
+      .then((res) => res.json())
+      .then((data: { summary?: { count?: number; avgRating?: number | null }; reviews?: DisciplineReview[] }) => {
+        if (cancelled) return;
+        setReviewSummary({
+          count: Number(data.summary?.count ?? 0),
+          avgRating:
+            typeof data.summary?.avgRating === "number"
+              ? Number(data.summary.avgRating)
+              : null,
+        });
+        setPublicReviews(Array.isArray(data.reviews) ? data.reviews : []);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setReviewSummary({ count: 0, avgRating: null });
+          setPublicReviews([]);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [discipline.id]);
 
   const joinedProgress = useMemo(
     () =>
@@ -560,6 +599,48 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         </div>
 
         {/* Description with Markdown — fisarmonica se la disciplina è attiva */}
+        <section className="mt-10 mb-8 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5">
+          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            Recensioni del percorso
+          </h3>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            {reviewSummary.count > 0 ? (
+              <>
+                <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                  {reviewSummary.avgRating?.toFixed(1)}
+                </span>
+                {" / 5 · "}
+                {reviewSummary.count} valutazioni
+              </>
+            ) : (
+              "Ancora nessuna valutazione."
+            )}
+          </p>
+          {publicReviews.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {publicReviews.map((review) => (
+                <article
+                  key={review.id}
+                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-3"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      {review.user_name}
+                    </p>
+                    <p className="text-amber-500 text-sm" aria-label={`Valutazione ${review.rating} su 5`}>
+                      {"★".repeat(review.rating)}
+                      <span className="text-zinc-400">{review.rating < 5 ? "☆".repeat(5 - review.rating) : ""}</span>
+                    </p>
+                  </div>
+                  {review.comment ? (
+                    <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">{review.comment}</p>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          ) : null}
+        </section>
+
         {discipline.long_desc && (
           <div className="prose prose-zinc dark:prose-invert max-w-none">
             <div
