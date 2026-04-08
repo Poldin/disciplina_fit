@@ -388,6 +388,8 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const ctaButtonClass = joined
     ? "bg-green-600 hover:bg-green-600 text-white cursor-default"
     : "bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900";
+  const restartButtonClass =
+    "bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900";
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
@@ -548,9 +550,11 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             <button
               onClick={handlePartecipa}
               disabled={isJoining}
-              className={`w-full sm:w-auto px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${ctaButtonClass}`}
+              className={`w-full sm:w-auto px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${
+                completedAt ? restartButtonClass : ctaButtonClass
+              }`}
             >
-              {completedAt ? "Ricomincia percorso" : getButtonText()}
+              {completedAt ? "ricomincia il percorso" : getButtonText()}
             </button>
           )}
         </div>
@@ -623,9 +627,11 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             <button
               onClick={handlePartecipa}
               disabled={isJoining}
-              className={`w-full sm:w-auto px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${ctaButtonClass}`}
+              className={`w-full sm:w-auto px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${
+                completedAt ? restartButtonClass : ctaButtonClass
+              }`}
             >
-              {completedAt ? "Ricomincia percorso" : getButtonText()}
+              {completedAt ? "ricomincia il percorso" : getButtonText()}
             </button>
           </div>
         )}
