@@ -550,6 +550,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     : "bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900";
   const restartButtonClass =
     "bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900";
+  const hasPastCompletionWhileActive = currentLinkStatus === "active" && Boolean(completedAt);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
@@ -631,7 +632,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
                 {discipline.title}
               </h1>
-              {currentLinkStatus === "completed" && completedAt ? (
+              {completedAt ? (
                 <p
                   role="button"
                   tabIndex={0}
@@ -649,26 +650,34 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               ) : null}
               {joined && joinedProgress ? (
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  <span className="font-medium text-emerald-700 dark:text-emerald-400">
-                    {joinedProgress.completed}
-                  </span>
-                  {" di "}
-                  <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                    {joinedProgress.total}
-                  </span>
-                  {" giorni sbloccati"}
-                  {joinedProgress.remaining > 0 ? (
-                    <>
-                      {" · "}
-                      <span className="text-zinc-500 dark:text-zinc-500">
-                        ne mancano {joinedProgress.remaining}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="font-medium text-emerald-700 dark:text-emerald-400">
-                      {" · "}
-                      percorso completato
+                  {hasPastCompletionWhileActive && joinedProgress.remaining === 0 ? (
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                      percorso gia completato in passato · nuova versione in corso
                     </span>
+                  ) : (
+                    <>
+                      <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                        {joinedProgress.completed}
+                      </span>
+                      {" di "}
+                      <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                        {joinedProgress.total}
+                      </span>
+                      {" giorni sbloccati"}
+                      {joinedProgress.remaining > 0 ? (
+                        <>
+                          {" · "}
+                          <span className="text-zinc-500 dark:text-zinc-500">
+                            ne mancano {joinedProgress.remaining}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                          {" · "}
+                          percorso completato
+                        </span>
+                      )}
+                    </>
                   )}
                 </p>
               ) : null}

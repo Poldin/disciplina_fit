@@ -84,6 +84,10 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       sentDayNumbers
     );
   }, [activeDiscipline, sentDayNumbers]);
+  const activeDisciplineCompletedAt = activeDiscipline
+    ? completedAtBySlug[activeDiscipline.slug]
+    : undefined;
+  const hasPastCompletionWhileActive = Boolean(activeDisciplineCompletedAt);
 
   // Pulisce l'URL dopo il ritorno da Stripe Checkout
   useEffect(() => {
@@ -313,26 +317,34 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                   </p>
                   {activeProgress ? (
                     <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
-                      <span className="font-medium text-emerald-700 dark:text-emerald-400">
-                        {activeProgress.completed}
-                      </span>
-                      {" di "}
-                      <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                        {activeProgress.total}
-                      </span>
-                      {" giorni sbloccati"}
-                      {activeProgress.remaining > 0 ? (
-                        <>
-                          {" · "}
-                          <span className="text-zinc-500 dark:text-zinc-500">
-                            ne mancano {activeProgress.remaining}
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-emerald-700 dark:text-emerald-400 font-medium">
-                          {" · "}
-                          percorso completato
+                      {hasPastCompletionWhileActive && activeProgress.remaining === 0 ? (
+                        <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                          percorso gia completato in passato · nuova versione in corso
                         </span>
+                      ) : (
+                        <>
+                          <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                            {activeProgress.completed}
+                          </span>
+                          {" di "}
+                          <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                            {activeProgress.total}
+                          </span>
+                          {" giorni sbloccati"}
+                          {activeProgress.remaining > 0 ? (
+                            <>
+                              {" · "}
+                              <span className="text-zinc-500 dark:text-zinc-500">
+                                ne mancano {activeProgress.remaining}
+                              </span>
+                            </>
+                          ) : (
+                            <span className="text-emerald-700 dark:text-emerald-400 font-medium">
+                              {" · "}
+                              percorso completato
+                            </span>
+                          )}
+                        </>
                       )}
                     </p>
                   ) : null}
