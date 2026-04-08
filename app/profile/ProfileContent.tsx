@@ -116,6 +116,24 @@ export default function ProfileContent() {
     setDeleteError(null);
   };
 
+  const handleShareBadge = async (badge: CompletionBadge) => {
+    const disciplineTitle = Array.isArray(badge.disciplines)
+      ? badge.disciplines[0]?.title ?? "Percorso completato"
+      : badge.disciplines?.title ?? "Percorso completato";
+    const text = `Ho completato "${disciplineTitle}" su disciplinaFIT.`;
+    const url = typeof window !== "undefined" ? window.location.origin : "";
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: "Badge ottenuto", text, url });
+      } else {
+        await navigator.clipboard?.writeText(`${text} ${url}`.trim());
+        alert("Messaggio copiato negli appunti!");
+      }
+    } catch {
+      // no-op
+    }
+  };
+
   if (loading || !user) {
     return (
       <div className="min-h-screen bg-zinc-50 dark:bg-black flex items-center justify-center text-zinc-500 dark:text-zinc-400 text-sm">
@@ -315,13 +333,33 @@ export default function ProfileContent() {
 
       {selectedBadge && (
         <div className="fixed inset-0 z-70 bg-zinc-950/95 text-white">
-          <div className="min-h-full flex flex-col items-center justify-center px-6 py-10 text-center">
+          <div className="min-h-full flex flex-col items-center px-6 py-10 text-center">
+            <div className="flex-1 w-full flex flex-col items-center justify-center">
             <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-4">
               Badge ottenuto
             </p>
             <h2 className="text-4xl sm:text-5xl font-bold leading-tight max-w-3xl">
               Ce l&apos;hai fatta!
             </h2>
+            {(Array.isArray(selectedBadge.disciplines)
+              ? selectedBadge.disciplines[0]?.img_url
+              : selectedBadge.disciplines?.img_url) ? (
+              <div className="mt-6 w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border border-emerald-500/30">
+                <img
+                  src={
+                    Array.isArray(selectedBadge.disciplines)
+                      ? selectedBadge.disciplines[0]?.img_url ?? ""
+                      : selectedBadge.disciplines?.img_url ?? ""
+                  }
+                  alt={
+                    (Array.isArray(selectedBadge.disciplines)
+                      ? selectedBadge.disciplines[0]?.title
+                      : selectedBadge.disciplines?.title) ?? "Disciplina"
+                  }
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            ) : null}
             <p className="mt-5 text-base sm:text-lg text-zinc-200 max-w-2xl">
               {Array.isArray(selectedBadge.disciplines)
                 ? selectedBadge.disciplines[0]?.title ?? "Percorso completato"
@@ -333,13 +371,23 @@ export default function ProfileContent() {
                 ? new Date(selectedBadge.completed_at).toLocaleDateString("it-IT")
                 : "—"}
             </p>
-            <button
-              type="button"
-              onClick={() => setSelectedBadge(null)}
-              className="mt-10 px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
-            >
-              Chiudi
-            </button>
+            </div>
+            <div className="mt-8 w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => handleShareBadge(selectedBadge)}
+                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
+              >
+                Condividi
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedBadge(null)}
+                className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
+              >
+                Chiudi
+              </button>
+            </div>
           </div>
         </div>
       )}
