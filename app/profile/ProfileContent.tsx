@@ -11,6 +11,23 @@ import PushNotificationToggle from "@/app/components/PushNotificationToggle";
 
 const oneSignalEnabled = Boolean(process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID);
 
+type CompletionBadge = {
+  id: number;
+  completed_at: string | null;
+  disciplines:
+    | {
+        title: string | null;
+        slug: string;
+        img_url: string | null;
+      }
+    | {
+        title: string | null;
+        slug: string;
+        img_url: string | null;
+      }[]
+    | null;
+};
+
 function formatActivationDate(iso: string) {
   return new Date(iso).toLocaleDateString("it-IT", {
     day: "numeric",
@@ -28,12 +45,36 @@ export default function ProfileContent() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [completionBadges, setCompletionBadges] = useState<CompletionBadge[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
       router.replace("/");
     }
   }, [loading, user, router]);
+
+  useEffect(() => {
+    if (!user) {
+      setCompletionBadges([]);
+      return;
+    }
+    let cancelled = false;
+    const supabase = createClient();
+    void supabase
+      .from("link_user_disciplines")
+      .select("id, completed_at, disciplines(title, slug, img_url)")
+      .eq("user_id", user.id)
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setCompletionBadges((data ?? []) as CompletionBadge[]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   const email = user?.email || "—";
 
@@ -113,6 +154,46 @@ export default function ProfileContent() {
             <PushNotificationToggle oneSignalEnabled={oneSignalEnabled} />
           </div>
         )}
+
+        <div className="mb-10 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">
+            I miei completamenti
+          </h2>
+          {completionBadges.length === 0 ? (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">
+              Nessun badge ancora. Completa il tuo primo percorso e comparira` qui.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {completionBadges.map((badge) => {
+                const disc = Array.isArray(badge.disciplines)
+                  ? badge.disciplines[0]
+                  : badge.disciplines;
+                return (
+                  <div
+                    key={badge.id}
+                    className="flex items-center gap-3 rounded-lg border border-emerald-200/80 dark:border-emerald-700/60 bg-emerald-50/70 dark:bg-emerald-950/30 px-3 py-2"
+                  >
+                    <div className="h-9 w-9 rounded-full bg-emerald-500 text-zinc-950 flex items-center justify-center font-bold">
+                      ✓
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
+                        {disc?.title ?? "Percorso completato"}
+                      </p>
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                        Completato il{" "}
+                        {badge.completed_at
+                          ? new Date(badge.completed_at).toLocaleDateString("it-IT")
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <button

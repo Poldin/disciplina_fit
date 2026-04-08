@@ -2,6 +2,7 @@ import { createAdminClient } from '@/app/utils/supabase/admin';
 import { sendPushToExternalUser } from '@/app/utils/onesignalPush';
 import { getPublicSiteUrl } from '@/app/utils/publicSiteUrl';
 import { sendDisciplineReminderEmail } from '@/app/utils/sendDisciplineReminderEmail';
+import { sendDisciplineCompletionEmail } from '@/app/utils/sendDisciplineCompletionEmail';
 import {
   appendScheduleDeliveryLog,
   type ScheduleDeliveryLogEntry,
@@ -25,6 +26,7 @@ type LinkRowRaw = {
   id: number;
   user_id: string | null;
   stopped_at: string | null;
+  status?: string | null;
   disciplines: DisciplineEmbed | DisciplineEmbed[] | null;
 };
 
@@ -320,6 +322,14 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
   }
 
   let markedSent = 0;
+  const successfullySentLinkIds = new Set<number>();
+  for (const msg of messages) {
+    if (!successfullySentIds.includes(msg.id)) continue;
+    if (typeof msg.link_user_discipline_id === 'number') {
+      successfullySentLinkIds.add(msg.link_user_discipline_id);
+    }
+  }
+
   if (successfullySentIds.length > 0) {
     console.log(`[sendScheduledMessages] marking is_sent=true count=${successfullySentIds.length}`);
     const { error: markError } = await supabaseAdmin
@@ -334,6 +344,76 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
     }
 
     markedSent = successfullySentIds.length;
+  }
+
+  // Se per un link non restano messaggi pendenti, il percorso è completato.
+  if (successfullySentLinkIds.size > 0) {
+    const candidateLinkIds = Array.from(successfullySentLinkIds);
+    const { data: pendingRows, error: pendingError } = await supabaseAdmin
+      .from('message_schedule')
+      .select('link_user_discipline_id')
+      .in('link_user_discipline_id', candidateLinkIds)
+      .eq('is_sent', false);
+
+    if (pendingError) {
+      console.error('[sendScheduledMessages] pending schedule query error:', pendingError);
+    } else {
+      const linksWithPending = new Set<number>();
+      for (const row of pendingRows ?? []) {
+        const linkId = row.link_user_discipline_id;
+        if (typeof linkId === 'number') linksWithPending.add(linkId);
+      }
+
+      const completedLinkIds = candidateLinkIds.filter((id) => !linksWithPending.has(id));
+      if (completedLinkIds.length > 0) {
+        const { data: completedRows, error: completeError } = await supabaseAdmin
+          .from('link_user_disciplines')
+          .update({
+            status: 'completed',
+            completed_at: nowIso,
+          })
+          .in('id', completedLinkIds)
+          .eq('status', 'active')
+          .select('id, user_id, disciplines(title)');
+
+        if (completeError) {
+          console.error('[sendScheduledMessages] complete link update error:', completeError);
+        } else {
+          for (const row of completedRows ?? []) {
+            const completedUserId = row.user_id;
+            if (!completedUserId) continue;
+            const disciplineTitle = Array.isArray(row.disciplines)
+              ? row.disciplines[0]?.title ?? 'disciplinaFIT'
+              : row.disciplines?.title ?? 'disciplinaFIT';
+            try {
+              const { data: authData, error: authErr } =
+                await supabaseAdmin.auth.admin.getUserById(completedUserId);
+              const userEmail = authData?.user?.email?.trim();
+              if (authErr || !userEmail) {
+                console.warn(
+                  `[sendScheduledMessages] completion email skipped link=${row.id} reason=${authErr?.message ?? 'no email on account'}`
+                );
+                continue;
+              }
+              const mail = await sendDisciplineCompletionEmail({
+                to: userEmail,
+                disciplineTitle,
+              });
+              if (!mail.ok) {
+                console.warn(
+                  `[sendScheduledMessages] completion email failed link=${row.id} reason=${mail.reason}`
+                );
+              }
+            } catch (err) {
+              console.warn(
+                `[sendScheduledMessages] completion email exception link=${row.id}`,
+                err
+              );
+            }
+          }
+        }
+      }
+    }
   }
 
   const result = {
