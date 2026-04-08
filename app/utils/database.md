@@ -99,39 +99,3 @@ CREATE TABLE public.subscriptions (
   CONSTRAINT subscriptions_pkey PRIMARY KEY (id),
   CONSTRAINT subscriptions_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
-
--- Reviews sul percorso completato (1 review per completamento/badge).
-CREATE TABLE public.discipline_reviews (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  link_user_discipline_id bigint NOT NULL UNIQUE,
-  user_id uuid NOT NULL,
-  discipline_id uuid NOT NULL,
-  rating smallint NOT NULL CHECK (rating BETWEEN 1 AND 5),
-  comment text,
-  is_public boolean NOT NULL DEFAULT false,
-  CONSTRAINT discipline_reviews_pkey PRIMARY KEY (id),
-  CONSTRAINT discipline_reviews_link_user_discipline_id_fkey FOREIGN KEY (link_user_discipline_id) REFERENCES public.link_user_disciplines(id) ON DELETE CASCADE,
-  CONSTRAINT discipline_reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id) ON DELETE CASCADE,
-  CONSTRAINT discipline_reviews_discipline_id_fkey FOREIGN KEY (discipline_id) REFERENCES public.disciplines(id) ON DELETE CASCADE
-);
-
--- Indici consigliati per listing pubblico e aggregazioni per disciplina.
-CREATE INDEX discipline_reviews_discipline_created_idx
-  ON public.discipline_reviews (discipline_id, created_at DESC);
-CREATE INDEX discipline_reviews_public_idx
-  ON public.discipline_reviews (discipline_id)
-  WHERE is_public = true;
-
--- RLS consigliata:
--- ALTER TABLE public.discipline_reviews ENABLE ROW LEVEL SECURITY;
---
--- Solo backend/admin service role puo` inserire/aggiornare review
--- (in app usiamo route server-side con createAdminClient e check ownership/completion).
---
--- Lettura pubblica solo dei commenti marcati pubblici.
--- CREATE POLICY "public can read public review comments"
---   ON public.discipline_reviews
---   FOR SELECT
---   USING (is_public = true);
