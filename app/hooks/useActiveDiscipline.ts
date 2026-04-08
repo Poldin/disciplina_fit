@@ -27,16 +27,18 @@ export function useActiveDiscipline(userId: string | null | undefined) {
     const utcDayStart = new Date();
     utcDayStart.setUTCHours(0, 0, 0, 0);
 
-    void supabase
-      .from("link_user_disciplines")
-      .select(
-        "discipline_id, disciplines(id, title, slug, img_url, short_desc, lenght_days, notification_plan)"
-      )
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .limit(1)
-      .single()
-      .then(async ({ data, error }) => {
+    void (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("link_user_disciplines")
+          .select(
+            "discipline_id, disciplines(id, title, slug, img_url, short_desc, lenght_days, notification_plan)"
+          )
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .limit(1)
+          .single();
+
         if (cancelled) return;
         if (!error && data) {
           setActiveDisciplineId(data.discipline_id);
@@ -72,13 +74,13 @@ export function useActiveDiscipline(userId: string | null | undefined) {
         const disc = completedToday.data.disciplines as unknown as Discipline;
         setActiveDiscipline(disc ?? null);
         setIsLoading(false);
-      })
-      .catch(() => {
+      } catch {
         if (cancelled) return;
         setActiveDiscipline(null);
         setActiveDisciplineId(null);
         setIsLoading(false);
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
