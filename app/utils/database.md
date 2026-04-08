@@ -52,6 +52,7 @@ CREATE TABLE public.disciplines (
   lenght_days bigint,
   metadata jsonb,
   notification_plan jsonb,
+  is_public boolean,
   CONSTRAINT disciplines_pkey PRIMARY KEY (id)
 );
 CREATE TABLE public.link_user_disciplines (

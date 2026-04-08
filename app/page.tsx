@@ -15,7 +15,7 @@ export default async function Home() {
   const supabase = await createClient();
 
   const { data: disciplines } = await supabase.from("disciplines").select("*");
-  const list = disciplines ?? [];
+  const list = (disciplines ?? []).filter((d) => d.is_public !== false);
   const counts = await fetchParticipantCountsByDisciplineIds(
     list.map((d) => d.id)
   );
