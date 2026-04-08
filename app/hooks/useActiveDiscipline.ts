@@ -5,7 +5,7 @@ import { createClient } from "@/app/utils/supabase/client";
 import type { Discipline } from "@/app/utils/types";
 
 /**
- * Percorso attivo dell'utente (al massimo uno con stopped_at null).
+ * Percorso attivo dell'utente (al massimo uno con status = active).
  */
 export function useActiveDiscipline(userId: string | null | undefined) {
   const [activeDiscipline, setActiveDiscipline] = useState<Discipline | null>(null);
@@ -27,7 +27,7 @@ export function useActiveDiscipline(userId: string | null | undefined) {
         "discipline_id, disciplines(id, title, slug, img_url, short_desc, lenght_days, notification_plan)"
       )
       .eq("user_id", userId)
-      .is("stopped_at", null)
+      .eq("status", "active")
       .limit(1)
       .single()
       .then(({ data, error }) => {

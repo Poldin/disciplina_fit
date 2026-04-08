@@ -124,7 +124,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       .select("id")
       .eq("user_id", user.id)
       .eq("discipline_id", discipline.id)
-      .is("stopped_at", null)
+      .eq("status", "active")
       .single();
 
     if (thisJoined) {
@@ -141,7 +141,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       .from("link_user_disciplines")
       .select("discipline_id, disciplines(id, title, img_url, slug)")
       .eq("user_id", user.id)
-      .is("stopped_at", null)
+      .eq("status", "active")
       .neq("discipline_id", discipline.id)
       .limit(1)
       .single();

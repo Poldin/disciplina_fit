@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/app/utils/supabase/server";
 import { createAdminClient } from "@/app/utils/supabase/admin";
 import { isScheduleDayUnlockedByUtcCalendar } from "@/app/utils/scheduleDayUnlock";
+import { listNotificationPlanDayPreviews } from "@/app/utils/notificationPlanDisplay";
 
 /**
  * Giorni (day_number) accessibili per il link attivo: data UTC odierna >= data UTC
@@ -30,10 +31,10 @@ export async function GET(request: NextRequest) {
   const admin = createAdminClient();
   const { data: link } = await admin
     .from("link_user_disciplines")
-    .select("id")
+    .select("id, status")
     .eq("user_id", user.id)
     .eq("discipline_id", disciplineId.trim())
-    .is("stopped_at", null)
+    .in("status", ["active", "completed"])
     .maybeSingle();
 
   if (!link) {
@@ -65,6 +66,40 @@ export async function GET(request: NextRequest) {
     .filter(([, iso]) => isScheduleDayUnlockedByUtcCalendar(iso, now))
     .map(([dn]) => dn)
     .sort((a, b) => a - b);
+
+  // Al raggiungimento dell'ultimo giorno, marca il percorso come completato.
+  if (link.status === "active") {
+    const { data: discipline } = await admin
+      .from("disciplines")
+      .select("notification_plan, lenght_days")
+      .eq("id", disciplineId.trim())
+      .maybeSingle();
+
+    if (discipline) {
+      const planDays = listNotificationPlanDayPreviews(discipline.notification_plan).map(
+        (d) => d.dayNumber
+      );
+      const fallbackLen =
+        discipline.lenght_days == null ? 0 : Number(discipline.lenght_days);
+      const totalDays =
+        planDays.length > 0
+          ? planDays.length
+          : Number.isFinite(fallbackLen) && fallbackLen > 0
+            ? Math.floor(fallbackLen)
+            : 0;
+
+      if (totalDays > 0 && unlockedDays.length >= totalDays) {
+        await admin
+          .from("link_user_disciplines")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString(),
+          })
+          .eq("id", link.id)
+          .eq("status", "active");
+      }
+    }
+  }
 
   const dayFirstSendUtc: Record<string, string> = {};
   for (const [dn, iso] of earliestByDay) {

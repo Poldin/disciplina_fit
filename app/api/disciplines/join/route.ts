@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
       .select('id')
       .eq('user_id', user.id)
       .eq('discipline_id', disciplineId)
-      .is('stopped_at', null)
+      .eq('status', 'active')
       .single();
 
     if (existing) {
@@ -67,7 +67,7 @@ export async function POST(request: NextRequest) {
       .from('link_user_disciplines')
       .select('id, discipline_id')
       .eq('user_id', user.id)
-      .is('stopped_at', null);
+      .eq('status', 'active');
 
     if (activeDisciplines && activeDisciplines.length > 0) {
       if (!replaceActive) {
@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
 
       await supabaseAdmin
         .from('link_user_disciplines')
-        .update({ stopped_at: now })
+        .update({ stopped_at: now, status: 'stopped' })
         .in('id', activeIds);
     }
 
@@ -100,6 +100,7 @@ export async function POST(request: NextRequest) {
       .insert({
         user_id: user.id,
         discipline_id: disciplineId,
+        status: 'active',
       })
       .select('id')
       .single();

@@ -46,6 +46,9 @@ CREATE TABLE public.link_user_disciplines (
   discipline_id uuid,
   metadata jsonb,
   stopped_at timestamp with time zone,
+  status text NOT NULL DEFAULT 'active'::text CHECK (status = ANY (ARRAY['active'::text, 'completed'::text, 'stopped'::text])),
+  completed_at timestamp with time zone,
+  completion_seen_at timestamp with time zone,
   CONSTRAINT link_user_disciplines_pkey PRIMARY KEY (id),
   CONSTRAINT link_user_disciplines_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
   CONSTRAINT link_user_disciplines_discipline_id_fkey FOREIGN KEY (discipline_id) REFERENCES public.disciplines(id)

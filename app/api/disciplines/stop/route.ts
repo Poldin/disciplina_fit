@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       .select('id')
       .eq('user_id', user.id)
       .eq('discipline_id', disciplineId)
-      .is('stopped_at', null)
+      .eq('status', 'active')
       .single();
 
     if (!existing) {
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     // Blocca il percorso impostando stopped_at
     const { error: stopError } = await supabaseAdmin
       .from('link_user_disciplines')
-      .update({ stopped_at: new Date().toISOString() })
+      .update({ stopped_at: new Date().toISOString(), status: 'stopped' })
       .eq('id', existing.id);
 
     if (stopError) {

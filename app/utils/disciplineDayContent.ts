@@ -68,7 +68,7 @@ export async function loadDisciplineDayContent(
     .select("id")
     .eq("user_id", userId)
     .eq("discipline_id", discipline.id)
-    .is("stopped_at", null)
+    .in("status", ["active", "completed"])
     .maybeSingle();
 
   if (!link) {

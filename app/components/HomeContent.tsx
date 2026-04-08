@@ -16,12 +16,31 @@ interface HomeContentProps {
   disciplines: Discipline[];
 }
 
+type CompletionDialogData = {
+  id: number;
+  completed_at: string | null;
+  disciplines:
+    | {
+        title: string | null;
+        slug: string;
+        img_url: string | null;
+      }
+    | {
+        title: string | null;
+        slug: string;
+        img_url: string | null;
+      }[]
+    | null;
+};
+
 export default function HomeContent({ disciplines }: HomeContentProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
   const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
   /** Primo invio giorno 1 (UTC), stesso criterio della timeline disciplina */
   const [pathStartIso, setPathStartIso] = useState<string | null>(null);
+  const [completionDialog, setCompletionDialog] = useState<CompletionDialogData | null>(null);
+  const [isClosingCompletionDialog, setIsClosingCompletionDialog] = useState(false);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
   const { activeDiscipline, activeDisciplineId } = useActiveDiscipline(user?.id);
 
@@ -81,6 +100,41 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       cancelled = true;
     };
   }, [user, activeDiscipline?.id]);
+
+  useEffect(() => {
+    if (!user) {
+      setCompletionDialog(null);
+      return;
+    }
+    let cancelled = false;
+    void fetch("/api/disciplines/completion-unseen")
+      .then((res) => res.json())
+      .then((data: { completion?: CompletionDialogData | null }) => {
+        if (cancelled) return;
+        setCompletionDialog(data.completion ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setCompletionDialog(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const handleCloseCompletionDialog = async () => {
+    if (!completionDialog) return;
+    setIsClosingCompletionDialog(true);
+    try {
+      await fetch("/api/disciplines/completion-seen", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ linkId: completionDialog.id }),
+      });
+      setCompletionDialog(null);
+    } finally {
+      setIsClosingCompletionDialog(false);
+    }
+  };
 
   // Gestisce il click su "Abbonati" dalla home (checkout Stripe)
   const handleSubscribe = async () => {
@@ -438,6 +492,46 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
 
       {/* Login Dialog */}
       <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+
+      {completionDialog && (
+        <div className="fixed inset-0 z-70 bg-zinc-950/95 text-white">
+          <div className="min-h-full flex flex-col items-center justify-center px-6 py-10 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-4">
+              Traguardo raggiunto
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-tight max-w-3xl">
+              Percorso concluso.
+              <br />
+              Ce l&apos;hai fatta!
+            </h2>
+            <p className="mt-5 text-base sm:text-lg text-zinc-200 max-w-2xl">
+              Hai completato{" "}
+              {Array.isArray(completionDialog.disciplines)
+                ? completionDialog.disciplines[0]?.title ?? "la tua disciplina"
+                : completionDialog.disciplines?.title ?? "la tua disciplina"}
+              . Questo traguardo resta nel tuo profilo.
+            </p>
+            <div className="mt-10 flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleCloseCompletionDialog}
+                disabled={isClosingCompletionDialog}
+                className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors disabled:opacity-60"
+              >
+                {isClosingCompletionDialog ? "Salvo..." : "Fantastico"}
+              </button>
+              <button
+                type="button"
+                onClick={handleCloseCompletionDialog}
+                disabled={isClosingCompletionDialog}
+                className="px-6 py-3 rounded-lg border border-zinc-600 hover:border-zinc-400 text-zinc-100 transition-colors disabled:opacity-60"
+              >
+                Continua
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
