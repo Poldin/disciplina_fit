@@ -87,7 +87,11 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   const activeDisciplineCompletedAt = activeDiscipline
     ? completedAtBySlug[activeDiscipline.slug]
     : undefined;
-  const hasPastCompletionWhileActive = Boolean(activeDisciplineCompletedAt);
+  const hasPastCompletionWhileActive =
+    Boolean(activeDisciplineCompletedAt) &&
+    Boolean(pathStartIso) &&
+    new Date(activeDisciplineCompletedAt as string).getTime() <
+      new Date(pathStartIso as string).getTime();
 
   // Pulisce l'URL dopo il ritorno da Stripe Checkout
   useEffect(() => {

@@ -551,6 +551,8 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const restartButtonClass =
     "bg-zinc-900 hover:bg-zinc-800 dark:bg-zinc-100 dark:hover:bg-zinc-200 text-white dark:text-zinc-900";
   const hasPastCompletionWhileActive = currentLinkStatus === "active" && Boolean(completedAt);
+  const hasPastCompletionWithoutActiveRun = !joined && Boolean(completedAt);
+  const completedTotalDays = discipline.lenght_days ?? joinedProgress?.total ?? 0;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-black">
@@ -648,27 +650,42 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
                   Badge vinto il {new Date(completedAt).toLocaleDateString("it-IT")}
                 </p>
               ) : null}
-              {joined && joinedProgress ? (
+              {(joined && joinedProgress) || hasPastCompletionWithoutActiveRun ? (
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-                  {hasPastCompletionWhileActive && joinedProgress.remaining === 0 ? (
+                  {joined && joinedProgress && hasPastCompletionWhileActive && joinedProgress.remaining === 0 ? (
                     <span className="font-medium text-zinc-700 dark:text-zinc-300">
                       percorso gia completato in passato · nuova versione in corso
                     </span>
-                  ) : (
+                  ) : hasPastCompletionWithoutActiveRun ? (
                     <>
                       <span className="font-medium text-emerald-700 dark:text-emerald-400">
-                        {joinedProgress.completed}
+                        {completedTotalDays}
                       </span>
                       {" di "}
                       <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                        {joinedProgress.total}
+                        {completedTotalDays}
                       </span>
                       {" giorni sbloccati"}
-                      {joinedProgress.remaining > 0 ? (
+                      <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                        {" · "}
+                        percorso completato
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="font-medium text-emerald-700 dark:text-emerald-400">
+                        {joinedProgress?.completed}
+                      </span>
+                      {" di "}
+                      <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                        {joinedProgress?.total}
+                      </span>
+                      {" giorni sbloccati"}
+                      {(joinedProgress?.remaining ?? 0) > 0 ? (
                         <>
                           {" · "}
                           <span className="text-zinc-500 dark:text-zinc-500">
-                            ne mancano {joinedProgress.remaining}
+                            ne mancano {joinedProgress?.remaining}
                           </span>
                         </>
                       ) : (
@@ -825,6 +842,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
           lenghtDays={discipline.lenght_days}
           notificationPlan={discipline.notification_plan}
           joined={joined}
+          showAllUnlocked={hasPastCompletionWithoutActiveRun}
         />
 
         <section className="mt-12">

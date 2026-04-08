@@ -19,6 +19,8 @@ type Props = {
   notificationPlan: unknown;
   /** Utente iscritto a questa disciplina con link attivo */
   joined: boolean;
+  /** Mostra tutti i giorni sbloccati in base a un completamento storico */
+  showAllUnlocked?: boolean;
 };
 
 export default function NotificationPlanTimeline({
@@ -28,6 +30,7 @@ export default function NotificationPlanTimeline({
   lenghtDays,
   notificationPlan,
   joined,
+  showAllUnlocked = false,
 }: Props) {
   const { user, userName } = useAuth();
   const days = useMemo(
@@ -42,6 +45,12 @@ export default function NotificationPlanTimeline({
   const [commentCounts, setCommentCounts] = useState<Record<number, number>>({});
 
   useEffect(() => {
+    if (showAllUnlocked) {
+      const fallback = days.map((d) => d.dayNumber);
+      setSentDayNumbers(fallback);
+      setDayFirstSendUtc({});
+      return;
+    }
     if (!user || !joined) {
       setSentDayNumbers([]);
       setDayFirstSendUtc({});
@@ -77,7 +86,7 @@ export default function NotificationPlanTimeline({
     return () => {
       cancelled = true;
     };
-  }, [user, joined, disciplineId]);
+  }, [user, joined, disciplineId, showAllUnlocked, days]);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,7 +134,7 @@ export default function NotificationPlanTimeline({
         />
         <ul className="space-y-0">
           {days.map(({ dayNumber, preview }) => {
-            const open = unlocked.has(dayNumber);
+            const open = showAllUnlocked || unlocked.has(dayNumber);
             const href = `${base}/${dayNumber}`;
             const scheduleIso = dayFirstSendUtc[dayNumber];
             const calendarLabel =
