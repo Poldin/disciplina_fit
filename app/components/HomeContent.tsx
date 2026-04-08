@@ -51,6 +51,11 @@ type CompletionBadgeData = {
     | null;
 };
 
+type DisciplineReviewSummary = {
+  count: number;
+  avgRating: number | null;
+};
+
 export default function HomeContent({ disciplines }: HomeContentProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
@@ -68,6 +73,9 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
     completedAt: string;
     imgUrl: string | null;
   } | null>(null);
+  const [reviewSummaryByDisciplineId, setReviewSummaryByDisciplineId] = useState<
+    Record<string, DisciplineReviewSummary>
+  >({});
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
   const { activeDiscipline, activeDisciplineId } = useActiveDiscipline(user?.id);
 
@@ -155,6 +163,48 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       cancelled = true;
     };
   }, [user?.id]);
+
+  useEffect(() => {
+    if (disciplines.length === 0) {
+      setReviewSummaryByDisciplineId({});
+      return;
+    }
+    let cancelled = false;
+    void Promise.all(
+      disciplines.map(async (discipline) => {
+        const res = await fetch(
+          `/api/disciplines/reviews?disciplineId=${encodeURIComponent(discipline.id)}`
+        );
+        const data = (await res.json()) as {
+          summary?: { count?: number; avgRating?: number | null };
+        };
+        return {
+          id: discipline.id,
+          summary: {
+            count: Number(data.summary?.count ?? 0),
+            avgRating:
+              typeof data.summary?.avgRating === "number"
+                ? Number(data.summary.avgRating)
+                : null,
+          } satisfies DisciplineReviewSummary,
+        };
+      })
+    )
+      .then((rows) => {
+        if (cancelled) return;
+        const next: Record<string, DisciplineReviewSummary> = {};
+        for (const row of rows) {
+          next[row.id] = row.summary;
+        }
+        setReviewSummaryByDisciplineId(next);
+      })
+      .catch(() => {
+        if (!cancelled) setReviewSummaryByDisciplineId({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [disciplines]);
 
   useEffect(() => {
     if (!completionDialog) {
@@ -420,6 +470,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
         <div id="discipline-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {disciplines.map((discipline) => {
             const completedAt = completedAtBySlug[discipline.slug];
+            const reviewSummary = reviewSummaryByDisciplineId[discipline.id];
             return (
               <Link
                 key={discipline.id}
@@ -455,6 +506,19 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 
                 <p className="text-zinc-600 dark:text-zinc-400 mb-4 text-sm">
                   {discipline.short_desc}
+                </p>
+                <p className="mb-4 text-xs text-zinc-600 dark:text-zinc-400">
+                  {reviewSummary && reviewSummary.count > 0 ? (
+                    <>
+                      <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                        {reviewSummary.avgRating?.toFixed(1)}
+                      </span>
+                      {" / 5 · "}
+                      {reviewSummary.count} recensioni
+                    </>
+                  ) : (
+                    "0 recensioni"
+                  )}
                 </p>
                 {completedAt ? (
                   <p
