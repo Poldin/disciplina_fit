@@ -4,6 +4,22 @@ import { createAdminClient } from "@/app/utils/supabase/admin";
 import { isScheduleDayUnlockedByUtcCalendar } from "@/app/utils/scheduleDayUnlock";
 import { listNotificationPlanDayPreviews } from "@/app/utils/notificationPlanDisplay";
 
+function isAfterUtcDayEnd(iso: string | null | undefined, now: Date): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return false;
+  const endOfUtcDay = Date.UTC(
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate(),
+    23,
+    59,
+    59,
+    999
+  );
+  return now.getTime() >= endOfUtcDay;
+}
+
 /**
  * Giorni (day_number) accessibili per il link attivo: data UTC odierna >= data UTC
  * del primo send_time_utc programmato per quel giorno (non dipende da is_sent).
@@ -88,12 +104,24 @@ export async function GET(request: NextRequest) {
             ? Math.floor(fallbackLen)
             : 0;
 
-      if (totalDays > 0 && unlockedDays.length >= totalDays) {
+      const lastPlannedIso =
+        rows?.reduce<string | null>((acc, r) => {
+          const iso = r.send_time_utc as string | null;
+          if (!iso) return acc;
+          if (!acc || iso > acc) return iso;
+          return acc;
+        }, null) ?? null;
+
+      if (
+        totalDays > 0 &&
+        unlockedDays.length >= totalDays &&
+        isAfterUtcDayEnd(lastPlannedIso, now)
+      ) {
         await admin
           .from("link_user_disciplines")
           .update({
             status: "completed",
-            completed_at: new Date().toISOString(),
+            completed_at: now.toISOString(),
           })
           .eq("id", link.id)
           .eq("status", "active");

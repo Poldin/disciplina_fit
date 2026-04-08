@@ -59,16 +59,14 @@ export default function ProfileContent() {
       return;
     }
     let cancelled = false;
-    const supabase = createClient();
-    void supabase
-      .from("link_user_disciplines")
-      .select("id, completed_at, disciplines(title, slug, img_url)")
-      .eq("user_id", user.id)
-      .eq("status", "completed")
-      .order("completed_at", { ascending: false })
-      .then(({ data }) => {
+    void fetch("/api/user/completions")
+      .then((res) => res.json())
+      .then((data: { completions?: CompletionBadge[] }) => {
         if (cancelled) return;
-        setCompletionBadges((data ?? []) as CompletionBadge[]);
+        setCompletionBadges(data.completions ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setCompletionBadges([]);
       });
 
     return () => {

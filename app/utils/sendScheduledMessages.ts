@@ -61,6 +61,22 @@ function resolveHttpsImageUrl(baseUrl: string, imgUrl: string | null): string | 
   return `${baseUrl}/${t}`;
 }
 
+function isAfterUtcDayEnd(iso: string | null | undefined, now: Date): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return false;
+  const endOfUtcDay = Date.UTC(
+    d.getUTCFullYear(),
+    d.getUTCMonth(),
+    d.getUTCDate(),
+    23,
+    59,
+    59,
+    999
+  );
+  return now.getTime() >= endOfUtcDay;
+}
+
 async function persistMessageScheduleDeliveryLog(
   supabaseAdmin: ReturnType<typeof createAdminClient>,
   messageId: string,
@@ -364,8 +380,54 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
         if (typeof linkId === 'number') linksWithPending.add(linkId);
       }
 
-      const completedLinkIds = candidateLinkIds.filter((id) => !linksWithPending.has(id));
-      if (completedLinkIds.length > 0) {
+      const noPendingLinkIds = candidateLinkIds.filter((id) => !linksWithPending.has(id));
+      if (noPendingLinkIds.length > 0) {
+        const { data: lastScheduleRows, error: lastScheduleError } = await supabaseAdmin
+          .from('message_schedule')
+          .select('link_user_discipline_id, send_time_utc')
+          .in('link_user_discipline_id', noPendingLinkIds)
+          .not('send_time_utc', 'is', null)
+          .order('send_time_utc', { ascending: false });
+
+        if (lastScheduleError) {
+          console.error('[sendScheduledMessages] last schedule query error:', lastScheduleError);
+          return {
+            scanned: messages.length,
+            sent: successfullySentIds.length,
+            failed,
+            markedSent,
+            emailsSent,
+            emailSendErrors,
+            nowUtc: nowIso,
+          };
+        }
+
+        const maxSendByLink = new Map<number, string>();
+        for (const row of lastScheduleRows ?? []) {
+          const linkId = row.link_user_discipline_id;
+          const iso = row.send_time_utc;
+          if (typeof linkId !== 'number' || typeof iso !== 'string') continue;
+          if (!maxSendByLink.has(linkId)) maxSendByLink.set(linkId, iso);
+        }
+
+        const completedLinkIds = noPendingLinkIds.filter((id) =>
+          isAfterUtcDayEnd(maxSendByLink.get(id), nowUtc)
+        );
+        if (completedLinkIds.length === 0) {
+          // Nessun link ha ancora superato la fine della giornata UTC dell'ultimo invio.
+          const result = {
+            scanned: messages.length,
+            sent: successfullySentIds.length,
+            failed,
+            markedSent,
+            emailsSent,
+            emailSendErrors,
+            nowUtc: nowIso,
+          };
+          console.log('[sendScheduledMessages] completed:', result);
+          return result;
+        }
+
         const { data: completedRows, error: completeError } = await supabaseAdmin
           .from('link_user_disciplines')
           .update({
@@ -380,18 +442,20 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
           console.error('[sendScheduledMessages] complete link update error:', completeError);
         } else {
           for (const row of completedRows ?? []) {
-            const completedUserId = row.user_id;
+            const completedUserId = (row as { user_id?: string | null }).user_id;
             if (!completedUserId) continue;
-            const disciplineTitle = Array.isArray(row.disciplines)
-              ? row.disciplines[0]?.title ?? 'disciplinaFIT'
-              : row.disciplines?.title ?? 'disciplinaFIT';
+            const disciplinesRaw = (row as { disciplines?: unknown }).disciplines;
+            const firstDiscipline = Array.isArray(disciplinesRaw)
+              ? (disciplinesRaw[0] as { title?: string | null } | undefined)
+              : (disciplinesRaw as { title?: string | null } | null | undefined);
+            const disciplineTitle = firstDiscipline?.title ?? 'disciplinaFIT';
             try {
               const { data: authData, error: authErr } =
                 await supabaseAdmin.auth.admin.getUserById(completedUserId);
               const userEmail = authData?.user?.email?.trim();
               if (authErr || !userEmail) {
                 console.warn(
-                  `[sendScheduledMessages] completion email skipped link=${row.id} reason=${authErr?.message ?? 'no email on account'}`
+                  `[sendScheduledMessages] completion email skipped link=${(row as { id?: number }).id ?? 'n/a'} reason=${authErr?.message ?? 'no email on account'}`
                 );
                 continue;
               }
@@ -401,12 +465,12 @@ export async function sendDueScheduledMessages(nowUtc: Date = new Date()) {
               });
               if (!mail.ok) {
                 console.warn(
-                  `[sendScheduledMessages] completion email failed link=${row.id} reason=${mail.reason}`
+                  `[sendScheduledMessages] completion email failed link=${(row as { id?: number }).id ?? 'n/a'} reason=${mail.reason}`
                 );
               }
             } catch (err) {
               console.warn(
-                `[sendScheduledMessages] completion email exception link=${row.id}`,
+                `[sendScheduledMessages] completion email exception link=${(row as { id?: number }).id ?? 'n/a'}`,
                 err
               );
             }

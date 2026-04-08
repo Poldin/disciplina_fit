@@ -32,6 +32,23 @@ type ActiveDisciplineInfo = {
   slug: string;
 };
 
+type CompletionBadgeData = {
+  id: number;
+  completed_at: string | null;
+  disciplines:
+    | {
+        title: string | null;
+        slug: string;
+        img_url: string | null;
+      }
+    | {
+        title: string | null;
+        slug: string;
+        img_url: string | null;
+      }[]
+    | null;
+};
+
 interface DisciplinaContentProps {
   discipline: Discipline;
 }
@@ -47,6 +64,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [joined, setJoined] = useState(false);
   const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
   const [activeDiscipline, setActiveDiscipline] = useState<ActiveDisciplineInfo | null>(null);
+  const [completedAt, setCompletedAt] = useState<string | null>(null);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
   /** Disciplina attiva: descrizione lunga in fisarmonica (chiusa di default) */
   const [longDescOpen, setLongDescOpen] = useState(false);
@@ -159,6 +177,32 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   useEffect(() => {
     checkJoined();
   }, [checkJoined]);
+
+  useEffect(() => {
+    if (!user) {
+      setCompletedAt(null);
+      return;
+    }
+    let cancelled = false;
+    void fetch("/api/user/completions")
+      .then((res) => res.json())
+      .then((data: { completions?: CompletionBadgeData[] }) => {
+        if (cancelled) return;
+        const found = (data.completions ?? []).find((row) => {
+          const disc = Array.isArray(row.disciplines)
+            ? row.disciplines[0]
+            : row.disciplines;
+          return disc?.slug === discipline.slug;
+        });
+        setCompletedAt(found?.completed_at ?? null);
+      })
+      .catch(() => {
+        if (!cancelled) setCompletedAt(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, discipline.slug]);
 
   useEffect(() => {
     if (!user || !joined) {
@@ -399,6 +443,11 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
                 {discipline.title}
               </h1>
+              {!joined && completedAt ? (
+                <p className="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                  Badge vinto il {new Date(completedAt).toLocaleDateString("it-IT")}
+                </p>
+              ) : null}
               {joined && joinedProgress ? (
                 <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                   <span className="font-medium text-emerald-700 dark:text-emerald-400">
@@ -464,7 +513,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               disabled={isJoining}
               className={`w-full sm:w-auto px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${ctaButtonClass}`}
             >
-              {getButtonText()}
+              {completedAt ? "Ricomincia percorso" : getButtonText()}
             </button>
           )}
         </div>
@@ -539,7 +588,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               disabled={isJoining}
               className={`w-full sm:w-auto px-8 py-4 font-semibold rounded-lg transition-colors duration-200 text-lg disabled:opacity-80 ${ctaButtonClass}`}
             >
-              {getButtonText()}
+              {completedAt ? "Ricomincia percorso" : getButtonText()}
             </button>
           </div>
         )}

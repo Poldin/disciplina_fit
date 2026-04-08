@@ -33,6 +33,23 @@ type CompletionDialogData = {
     | null;
 };
 
+type CompletionBadgeData = {
+  id: number;
+  completed_at: string | null;
+  disciplines:
+    | {
+        title: string | null;
+        slug: string;
+        img_url: string | null;
+      }
+    | {
+        title: string | null;
+        slug: string;
+        img_url: string | null;
+      }[]
+    | null;
+};
+
 export default function HomeContent({ disciplines }: HomeContentProps) {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isLoadingPortal, setIsLoadingPortal] = useState(false);
@@ -41,6 +58,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   const [pathStartIso, setPathStartIso] = useState<string | null>(null);
   const [completionDialog, setCompletionDialog] = useState<CompletionDialogData | null>(null);
   const [isClosingCompletionDialog, setIsClosingCompletionDialog] = useState(false);
+  const [completedAtBySlug, setCompletedAtBySlug] = useState<Record<string, string>>({});
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
   const { activeDiscipline, activeDisciplineId } = useActiveDiscipline(user?.id);
 
@@ -115,6 +133,34 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       })
       .catch(() => {
         if (!cancelled) setCompletionDialog(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (!user) {
+      setCompletedAtBySlug({});
+      return;
+    }
+    let cancelled = false;
+    void fetch("/api/user/completions")
+      .then((res) => res.json())
+      .then((data: { completions?: CompletionBadgeData[] }) => {
+        if (cancelled) return;
+        const nextMap: Record<string, string> = {};
+        for (const row of data.completions ?? []) {
+          const disc = Array.isArray(row.disciplines)
+            ? row.disciplines[0]
+            : row.disciplines;
+          if (!disc?.slug || !row.completed_at) continue;
+          nextMap[disc.slug] = row.completed_at;
+        }
+        setCompletedAtBySlug(nextMap);
+      })
+      .catch(() => {
+        if (!cancelled) setCompletedAtBySlug({});
       });
     return () => {
       cancelled = true;
@@ -283,12 +329,14 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
 
         {/* Discipline Cards Grid */}
         <div id="discipline-grid" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {disciplines.map((discipline) => (
-            <Link
-              key={discipline.id}
-              href={`/disciplina/${discipline.slug}`}
-              className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:scale-[1.02] cursor-pointer"
-            >
+          {disciplines.map((discipline) => {
+            const completedAt = completedAtBySlug[discipline.slug];
+            return (
+              <Link
+                key={discipline.id}
+                href={`/disciplina/${discipline.slug}`}
+                className="bg-white dark:bg-zinc-900 rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-zinc-200 dark:border-zinc-800 hover:scale-[1.02] cursor-pointer"
+              >
               {/* Card Header - Immagine o gradient */}
               {discipline.img_url ? (
                 <div className="h-80 overflow-hidden">
@@ -319,6 +367,11 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 <p className="text-zinc-600 dark:text-zinc-400 mb-4 text-sm">
                   {discipline.short_desc}
                 </p>
+                {completedAt ? (
+                  <p className="mb-4 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                    Badge vinto il {new Date(completedAt).toLocaleDateString("it-IT")}
+                  </p>
+                ) : null}
                 
                 <div className="flex items-center justify-between text-sm text-zinc-500 dark:text-zinc-500 mb-4">
                   {discipline.lenght_days && (
@@ -344,11 +397,16 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                     ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-600/40"
                     : "bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-900 dark:text-zinc-50"
                 }`}>
-                  {joinedDisciplineIds.has(discipline.id) ? "In esecuzione" : "Partecipa"}
+                  {joinedDisciplineIds.has(discipline.id)
+                    ? "In esecuzione"
+                    : completedAt
+                      ? "Badge ottenuto"
+                      : "Partecipa"}
                 </button>
               </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
 
         {/* Messaggio se non ci sono discipline */}
