@@ -59,6 +59,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
   const [completionDialog, setCompletionDialog] = useState<CompletionDialogData | null>(null);
   const [isClosingCompletionDialog, setIsClosingCompletionDialog] = useState(false);
   const [completedAtBySlug, setCompletedAtBySlug] = useState<Record<string, string>>({});
+  const [selectedBadge, setSelectedBadge] = useState<{ title: string; completedAt: string } | null>(null);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
   const { activeDiscipline, activeDisciplineId } = useActiveDiscipline(user?.id);
 
@@ -368,7 +369,27 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                   {discipline.short_desc}
                 </p>
                 {completedAt ? (
-                  <p className="mb-4 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                  <p
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setSelectedBadge({
+                        title: discipline.title ?? "Percorso completato",
+                        completedAt,
+                      });
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedBadge({
+                          title: discipline.title ?? "Percorso completato",
+                          completedAt,
+                        });
+                      }
+                    }}
+                    className="mb-4 text-xs font-medium text-emerald-700 dark:text-emerald-400 underline underline-offset-2"
+                  >
                     Badge vinto il {new Date(completedAt).toLocaleDateString("it-IT")}
                   </p>
                 ) : null}
@@ -587,6 +608,32 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
                 Continua
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {selectedBadge && (
+        <div className="fixed inset-0 z-70 bg-zinc-950/95 text-white">
+          <div className="min-h-full flex flex-col items-center justify-center px-6 py-10 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-4">
+              Badge ottenuto
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-tight max-w-3xl">
+              Ce l&apos;hai fatta!
+            </h2>
+            <p className="mt-5 text-base sm:text-lg text-zinc-200 max-w-2xl">
+              {selectedBadge.title}
+            </p>
+            <p className="mt-2 text-sm text-zinc-300">
+              Badge vinto il {new Date(selectedBadge.completedAt).toLocaleDateString("it-IT")}
+            </p>
+            <button
+              type="button"
+              onClick={() => setSelectedBadge(null)}
+              className="mt-10 px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
+            >
+              Chiudi
+            </button>
           </div>
         </div>
       )}

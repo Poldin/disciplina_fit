@@ -46,6 +46,7 @@ export default function ProfileContent() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [completionBadges, setCompletionBadges] = useState<CompletionBadge[]>([]);
+  const [selectedBadge, setSelectedBadge] = useState<CompletionBadge | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -170,6 +171,15 @@ export default function ProfileContent() {
                 return (
                   <div
                     key={badge.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setSelectedBadge(badge)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSelectedBadge(badge);
+                      }
+                    }}
                     className="flex items-center gap-3 rounded-lg border border-emerald-200/80 dark:border-emerald-700/60 bg-emerald-50/70 dark:bg-emerald-950/30 px-3 py-2"
                   >
                     <div className="h-9 w-9 rounded-full bg-emerald-500 text-zinc-950 flex items-center justify-center font-bold">
@@ -275,6 +285,37 @@ export default function ProfileContent() {
                 {deleteLoading ? "Eliminazione…" : "Conferma eliminazione"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {selectedBadge && (
+        <div className="fixed inset-0 z-70 bg-zinc-950/95 text-white">
+          <div className="min-h-full flex flex-col items-center justify-center px-6 py-10 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-4">
+              Badge ottenuto
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-tight max-w-3xl">
+              Ce l&apos;hai fatta!
+            </h2>
+            <p className="mt-5 text-base sm:text-lg text-zinc-200 max-w-2xl">
+              {Array.isArray(selectedBadge.disciplines)
+                ? selectedBadge.disciplines[0]?.title ?? "Percorso completato"
+                : selectedBadge.disciplines?.title ?? "Percorso completato"}
+            </p>
+            <p className="mt-2 text-sm text-zinc-300">
+              Badge vinto il{" "}
+              {selectedBadge.completed_at
+                ? new Date(selectedBadge.completed_at).toLocaleDateString("it-IT")
+                : "—"}
+            </p>
+            <button
+              type="button"
+              onClick={() => setSelectedBadge(null)}
+              className="mt-10 px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
+            >
+              Chiudi
+            </button>
           </div>
         </div>
       )}

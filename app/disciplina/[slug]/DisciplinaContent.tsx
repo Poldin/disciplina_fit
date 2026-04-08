@@ -65,6 +65,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
   const [activeDiscipline, setActiveDiscipline] = useState<ActiveDisciplineInfo | null>(null);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
+  const [isBadgeOpen, setIsBadgeOpen] = useState(false);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
   /** Disciplina attiva: descrizione lunga in fisarmonica (chiusa di default) */
   const [longDescOpen, setLongDescOpen] = useState(false);
@@ -444,7 +445,18 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
                 {discipline.title}
               </h1>
               {!joined && completedAt ? (
-                <p className="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                <p
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setIsBadgeOpen(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setIsBadgeOpen(true);
+                    }
+                  }}
+                  className="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-400 underline underline-offset-2"
+                >
                   Badge vinto il {new Date(completedAt).toLocaleDateString("it-IT")}
                 </p>
               ) : null}
@@ -728,6 +740,32 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
                 Sì, cominciamo
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {isBadgeOpen && completedAt && (
+        <div className="fixed inset-0 z-70 bg-zinc-950/95 text-white">
+          <div className="min-h-full flex flex-col items-center justify-center px-6 py-10 text-center">
+            <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-4">
+              Badge ottenuto
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold leading-tight max-w-3xl">
+              Ce l&apos;hai fatta!
+            </h2>
+            <p className="mt-5 text-base sm:text-lg text-zinc-200 max-w-2xl">
+              {discipline.title ?? "Percorso completato"}
+            </p>
+            <p className="mt-2 text-sm text-zinc-300">
+              Badge vinto il {new Date(completedAt).toLocaleDateString("it-IT")}
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsBadgeOpen(false)}
+              className="mt-10 px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
+            >
+              Chiudi
+            </button>
           </div>
         </div>
       )}

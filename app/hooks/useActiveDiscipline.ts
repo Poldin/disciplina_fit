@@ -21,6 +21,9 @@ export function useActiveDiscipline(userId: string | null | undefined) {
     let cancelled = false;
     const supabase = createClient();
 
+    const utcDayStart = new Date();
+    utcDayStart.setUTCHours(0, 0, 0, 0);
+
     void supabase
       .from("link_user_disciplines")
       .select(
@@ -30,15 +33,38 @@ export function useActiveDiscipline(userId: string | null | undefined) {
       .eq("status", "active")
       .limit(1)
       .single()
-      .then(({ data, error }) => {
+      .then(async ({ data, error }) => {
         if (cancelled) return;
-        if (error || !data) {
+        if (!error && data) {
+          setActiveDisciplineId(data.discipline_id);
+          const disc = data.disciplines as unknown as Discipline;
+          setActiveDiscipline(disc ?? null);
+          return;
+        }
+
+        // Fallback: se oggi e` l'ultimo giorno e il link e` stato marcato completed troppo presto,
+        // lo manteniamo visibile in home fino a fine giornata UTC.
+        const completedToday = await supabase
+          .from("link_user_disciplines")
+          .select(
+            "discipline_id, completed_at, disciplines(id, title, slug, img_url, short_desc, lenght_days, notification_plan)"
+          )
+          .eq("user_id", userId)
+          .eq("status", "completed")
+          .gte("completed_at", utcDayStart.toISOString())
+          .order("completed_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (cancelled) return;
+        if (completedToday.error || !completedToday.data) {
           setActiveDiscipline(null);
           setActiveDisciplineId(null);
           return;
         }
-        setActiveDisciplineId(data.discipline_id);
-        const disc = data.disciplines as unknown as Discipline;
+
+        setActiveDisciplineId(completedToday.data.discipline_id);
+        const disc = completedToday.data.disciplines as unknown as Discipline;
         setActiveDiscipline(disc ?? null);
       });
 
