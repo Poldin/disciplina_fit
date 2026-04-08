@@ -644,7 +644,7 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
               Ce l&apos;hai fatta!
             </h2>
             {selectedBadge.imgUrl ? (
-              <div className="mt-6 w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border border-emerald-500/30">
+              <div className="mt-6 w-48 h-48 sm:w-56 sm:h-56 rounded-2xl overflow-hidden border border-emerald-500/30">
                 <img
                   src={selectedBadge.imgUrl}
                   alt={selectedBadge.title}
@@ -663,14 +663,14 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
               <button
                 type="button"
                 onClick={() => handleShareBadge(selectedBadge.title)}
-                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
+                className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
               >
                 Condividi
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedBadge(null)}
-                className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
+                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
               >
                 Chiudi
               </button>

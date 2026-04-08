@@ -344,7 +344,7 @@ export default function ProfileContent() {
             {(Array.isArray(selectedBadge.disciplines)
               ? selectedBadge.disciplines[0]?.img_url
               : selectedBadge.disciplines?.img_url) ? (
-              <div className="mt-6 w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border border-emerald-500/30">
+              <div className="mt-6 w-48 h-48 sm:w-56 sm:h-56 rounded-2xl overflow-hidden border border-emerald-500/30">
                 <img
                   src={
                     Array.isArray(selectedBadge.disciplines)
@@ -376,14 +376,14 @@ export default function ProfileContent() {
               <button
                 type="button"
                 onClick={() => handleShareBadge(selectedBadge)}
-                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
+                className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
               >
                 Condividi
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedBadge(null)}
-                className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
+                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
               >
                 Chiudi
               </button>

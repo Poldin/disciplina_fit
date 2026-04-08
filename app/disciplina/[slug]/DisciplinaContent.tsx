@@ -31,6 +31,7 @@ type ActiveDisciplineInfo = {
   img_url: string | null;
   slug: string;
 };
+type DisciplineLinkStatus = "active" | "completed" | null;
 
 type CompletionBadgeData = {
   id: number;
@@ -62,6 +63,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [isJoining, setIsJoining] = useState(false);
   const [isStopping, setIsStopping] = useState(false);
   const [joined, setJoined] = useState(false);
+  const [currentLinkStatus, setCurrentLinkStatus] = useState<DisciplineLinkStatus>(null);
   const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
   const [activeDiscipline, setActiveDiscipline] = useState<ActiveDisciplineInfo | null>(null);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
@@ -125,6 +127,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const checkJoined = useCallback(async () => {
     if (!user) {
       setJoined(false);
+      setCurrentLinkStatus(null);
       setActiveDiscipline(null);
       return;
     }
@@ -140,20 +143,24 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     // Controlla se è iscritto a QUESTA disciplina
     const { data: thisJoined } = await supabase
       .from("link_user_disciplines")
-      .select("id")
+      .select("id, status")
       .eq("user_id", user.id)
       .eq("discipline_id", discipline.id)
-      .eq("status", "active")
-      .single();
+      .in("status", ["active", "completed"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     if (thisJoined) {
       setJoined(true);
+      setCurrentLinkStatus(thisJoined.status as DisciplineLinkStatus);
       setActiveDiscipline(null);
       writeJoinedToSession(user.id, discipline.id, true, null);
       return;
     }
 
     setJoined(false);
+    setCurrentLinkStatus(null);
 
     // Controlla se ha un'ALTRA disciplina attiva
     const { data: otherActive } = await supabase
@@ -292,6 +299,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         clearDisciplinaSessionCache(user.id, discipline.id);
       }
       setJoined(true);
+      setCurrentLinkStatus("active");
       setActiveDiscipline(null);
       if (user) {
         writeJoinedToSession(user.id, discipline.id, true, null);
@@ -327,6 +335,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         clearDisciplinaSessionCache(user.id, discipline.id);
       }
       setJoined(false);
+      setCurrentLinkStatus(null);
       if (user) {
         writeJoinedToSession(user.id, discipline.id, false, null);
       }
@@ -422,7 +431,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
           )}
 
           {/* Bollino Iscrizione + Pulsante Blocca */}
-          {joined && (
+          {joined && currentLinkStatus === "active" && (
             <div className="flex flex-col items-start gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div className="inline-flex items-center gap-3">
                 <div
@@ -460,7 +469,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               <h1 className="text-4xl font-bold text-zinc-900 dark:text-zinc-50">
                 {discipline.title}
               </h1>
-              {!joined && completedAt ? (
+              {currentLinkStatus === "completed" && completedAt ? (
                 <p
                   role="button"
                   tabIndex={0}
@@ -535,7 +544,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
           </div>
 
           {/* CTA Button - nascosto se già iscritto */}
-          {!joined && (
+          {(!joined || currentLinkStatus === "completed") && (
             <button
               onClick={handlePartecipa}
               disabled={isJoining}
@@ -609,7 +618,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         )}
 
         {/* Bottom CTA o Bollino Iscrizione */}
-        {!joined && (
+        {(!joined || currentLinkStatus === "completed") && (
           <div className="mt-12 text-center">
             <button
               onClick={handlePartecipa}
@@ -771,7 +780,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               Ce l&apos;hai fatta!
             </h2>
             {discipline.img_url ? (
-              <div className="mt-6 w-40 h-40 sm:w-48 sm:h-48 rounded-2xl overflow-hidden border border-emerald-500/30">
+              <div className="mt-6 w-48 h-48 sm:w-56 sm:h-56 rounded-2xl overflow-hidden border border-emerald-500/30">
                 <img
                   src={discipline.img_url}
                   alt={discipline.title ?? "Disciplina"}
@@ -790,14 +799,14 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               <button
                 type="button"
                 onClick={handleShareBadge}
-                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
+                className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
               >
                 Condividi
               </button>
               <button
                 type="button"
                 onClick={() => setIsBadgeOpen(false)}
-                className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
+                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
               >
                 Chiudi
               </button>
