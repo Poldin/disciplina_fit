@@ -440,7 +440,17 @@ export default function ProfileContent() {
       {selectedBadge && (
         <div className="fixed inset-0 z-70 bg-zinc-950/95 text-white">
           <div className="h-full flex flex-col items-center px-4 sm:px-6 py-4 sm:py-6 text-center">
-            <div className="w-full max-w-3xl min-h-0 overflow-y-auto pr-1">
+            <div className="w-full max-w-3xl flex justify-end mb-2">
+              <button
+                type="button"
+                onClick={() => setSelectedBadge(null)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-600 text-zinc-200 hover:border-zinc-300 hover:text-zinc-50 transition-colors"
+                aria-label="Chiudi"
+              >
+                <span className="text-2xl leading-none">×</span>
+              </button>
+            </div>
+            <div className="w-full max-w-3xl min-h-0 overflow-y-auto pr-1 pb-28 sm:pb-0">
               <div className="w-full flex flex-col items-center">
             <h2 className="text-4xl sm:text-5xl font-bold leading-tight max-w-3xl">
               Ce l&apos;hai fatta!
@@ -510,21 +520,14 @@ export default function ProfileContent() {
             </div>
               </div>
             </div>
-            <div className="w-full max-w-3xl mt-4 pt-3 border-t border-zinc-800 bg-zinc-950/85">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-800 bg-zinc-950/95 p-4 sm:static sm:w-full sm:max-w-3xl sm:mt-4 sm:pt-3 sm:p-0 sm:border-t sm:bg-transparent">
+              <div className="mx-auto w-full max-w-3xl grid grid-cols-1 sm:grid-cols-1 gap-3">
               <button
                 type="button"
                 onClick={() => handleShareBadge(selectedBadge)}
                 className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
               >
                 Condividi
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedBadge(null)}
-                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
-              >
-                Chiudi
               </button>
               </div>
             </div>
