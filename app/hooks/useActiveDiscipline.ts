@@ -10,14 +10,17 @@ import type { Discipline } from "@/app/utils/types";
 export function useActiveDiscipline(userId: string | null | undefined) {
   const [activeDiscipline, setActiveDiscipline] = useState<Discipline | null>(null);
   const [activeDisciplineId, setActiveDisciplineId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!userId) {
       setActiveDiscipline(null);
       setActiveDisciplineId(null);
+      setIsLoading(false);
       return;
     }
 
+    setIsLoading(true);
     let cancelled = false;
     const supabase = createClient();
 
@@ -39,6 +42,7 @@ export function useActiveDiscipline(userId: string | null | undefined) {
           setActiveDisciplineId(data.discipline_id);
           const disc = data.disciplines as unknown as Discipline;
           setActiveDiscipline(disc ?? null);
+          setIsLoading(false);
           return;
         }
 
@@ -60,12 +64,20 @@ export function useActiveDiscipline(userId: string | null | undefined) {
         if (completedToday.error || !completedToday.data) {
           setActiveDiscipline(null);
           setActiveDisciplineId(null);
+          setIsLoading(false);
           return;
         }
 
         setActiveDisciplineId(completedToday.data.discipline_id);
         const disc = completedToday.data.disciplines as unknown as Discipline;
         setActiveDiscipline(disc ?? null);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setActiveDiscipline(null);
+        setActiveDisciplineId(null);
+        setIsLoading(false);
       });
 
     return () => {
@@ -73,5 +85,5 @@ export function useActiveDiscipline(userId: string | null | undefined) {
     };
   }, [userId]);
 
-  return { activeDiscipline, activeDisciplineId };
+  return { activeDiscipline, activeDisciplineId, isLoading };
 }

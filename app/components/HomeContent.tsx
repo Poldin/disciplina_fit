@@ -74,7 +74,8 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
     Record<string, DisciplineReviewSummary>
   >({});
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
-  const { activeDiscipline, activeDisciplineId } = useActiveDiscipline(user?.id);
+  const { activeDiscipline, activeDisciplineId, isLoading: isLoadingActiveDiscipline } =
+    useActiveDiscipline(user?.id);
 
   const joinedDisciplineIds = useMemo(
     () => (activeDisciplineId ? new Set([activeDisciplineId]) : new Set<string>()),
@@ -330,6 +331,26 @@ export default function HomeContent({ disciplines }: HomeContentProps) {
       <Header onLoginClick={() => setIsLoginOpen(true)} />
 
       {/* Disciplina attiva */}
+      {user && subscriptionInfo?.hasAccess && isLoadingActiveDiscipline && (
+        <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 animate-pulse">
+          <div className="max-w-7xl mx-auto px-1 sm:px-6 lg:px-8 py-4">
+            <div className="h-3 w-16 rounded bg-zinc-200 dark:bg-zinc-700 mb-4" />
+            <div className="rounded-xl -mx-1 px-1 py-1">
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-xl bg-zinc-200 dark:bg-zinc-700 shrink-0" />
+                <div className="flex-1 min-w-0 space-y-2">
+                  <div className="h-4 w-52 rounded bg-zinc-200 dark:bg-zinc-700" />
+                  <div className="h-3 w-40 rounded bg-zinc-200 dark:bg-zinc-700" />
+                </div>
+                <div className="hidden sm:block h-6 w-20 rounded-full bg-zinc-200 dark:bg-zinc-700 shrink-0" />
+              </div>
+              <div className="mt-4 pl-0 sm:pl-18">
+                <div className="h-2 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {user && subscriptionInfo?.hasAccess && activeDiscipline && (
         <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900">
           <div className="max-w-7xl mx-auto px-1 sm:px-6 lg:px-8 py-4">
