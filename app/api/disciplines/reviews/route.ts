@@ -6,7 +6,6 @@ type ReviewBody = {
   linkId?: unknown;
   rating?: unknown;
   comment?: unknown;
-  isPublic?: unknown;
 };
 
 export async function GET(request: NextRequest) {
@@ -43,7 +42,6 @@ export async function GET(request: NextRequest) {
         ? {
             rating: Number(row.rating),
             comment: row.comment ?? "",
-            isPublic: row.is_public === true,
           }
         : null,
     });
@@ -115,7 +113,6 @@ export async function POST(request: NextRequest) {
   const linkId = typeof body?.linkId === "number" ? body.linkId : null;
   const rating = typeof body?.rating === "number" ? body.rating : null;
   const rawComment = typeof body?.comment === "string" ? body.comment.trim() : "";
-  const isPublic = body?.isPublic === true;
 
   if (!linkId || !rating || !Number.isInteger(rating) || rating < 1 || rating > 5) {
     return NextResponse.json({ error: "Parametri non validi" }, { status: 400 });
@@ -147,7 +144,7 @@ export async function POST(request: NextRequest) {
       discipline_id: link.discipline_id,
       rating,
       comment,
-      is_public: comment ? isPublic : false,
+      is_public: comment ? true : false,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "link_user_discipline_id" }

@@ -50,8 +50,9 @@ export default function ProfileContent() {
   const [selectedBadge, setSelectedBadge] = useState<CompletionBadge | null>(null);
   const [reviewRating, setReviewRating] = useState<number>(5);
   const [reviewComment, setReviewComment] = useState("");
-  const [reviewIsPublic, setReviewIsPublic] = useState(true);
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewHydrated, setReviewHydrated] = useState(false);
+  const [lastSavedReviewKey, setLastSavedReviewKey] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -91,31 +92,43 @@ export default function ProfileContent() {
     if (!selectedBadge) {
       setReviewRating(5);
       setReviewComment("");
-      setReviewIsPublic(true);
+      setReviewHydrated(false);
+      setLastSavedReviewKey(null);
       setReviewError(null);
       return;
     }
     setReviewRating(5);
     setReviewComment("");
-    setReviewIsPublic(true);
+    setReviewHydrated(false);
+    setLastSavedReviewKey(null);
     setReviewError(null);
 
     let cancelled = false;
     void fetch(`/api/disciplines/reviews?linkId=${selectedBadge.id}`)
       .then((res) => res.json())
-      .then((data: { review?: { rating?: number; comment?: string; isPublic?: boolean } | null }) => {
+      .then((data: { review?: { rating?: number; comment?: string } | null }) => {
         if (cancelled) return;
-        if (!data.review) return;
+        if (!data.review) {
+          setReviewHydrated(true);
+          setLastSavedReviewKey("5|");
+          return;
+        }
         const rating = Number(data.review.rating);
-        setReviewRating(Number.isFinite(rating) && rating >= 1 && rating <= 5 ? rating : 5);
-        setReviewComment(typeof data.review.comment === "string" ? data.review.comment : "");
-        setReviewIsPublic(data.review.isPublic === true);
+        const normalizedRating =
+          Number.isFinite(rating) && rating >= 1 && rating <= 5 ? rating : 5;
+        const normalizedComment =
+          typeof data.review.comment === "string" ? data.review.comment : "";
+        setReviewRating(normalizedRating);
+        setReviewComment(normalizedComment);
+        setLastSavedReviewKey(`${normalizedRating}|${normalizedComment.trim()}`);
+        setReviewHydrated(true);
       })
       .catch(() => {
         if (!cancelled) {
           setReviewRating(5);
           setReviewComment("");
-          setReviewIsPublic(true);
+          setReviewHydrated(true);
+          setLastSavedReviewKey("5|");
         }
       });
     return () => {
@@ -175,7 +188,7 @@ export default function ProfileContent() {
     }
   };
 
-  const handleSaveReview = async () => {
+  const saveReview = async () => {
     if (!selectedBadge) return;
     if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
       setReviewError("Seleziona un voto da 1 a 5 stelle.");
@@ -191,7 +204,6 @@ export default function ProfileContent() {
           linkId: selectedBadge.id,
           rating: reviewRating,
           comment: reviewComment,
-          isPublic: reviewIsPublic,
         }),
       });
       if (!res.ok) {
@@ -200,12 +212,25 @@ export default function ProfileContent() {
           typeof data.error === "string" ? data.error : "Impossibile salvare la recensione"
         );
       }
+      setLastSavedReviewKey(`${reviewRating}|${reviewComment.trim()}`);
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Errore imprevisto");
     } finally {
       setReviewLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!selectedBadge || !reviewHydrated) return;
+    const nextKey = `${reviewRating}|${reviewComment.trim()}`;
+    if (nextKey === lastSavedReviewKey) return;
+    const timer = window.setTimeout(() => {
+      void saveReview();
+    }, 700);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [selectedBadge?.id, reviewHydrated, reviewRating, reviewComment, lastSavedReviewKey]);
 
   if (loading || !user) {
     return (
@@ -417,9 +442,6 @@ export default function ProfileContent() {
           <div className="h-full flex flex-col items-center px-4 sm:px-6 py-4 sm:py-6 text-center">
             <div className="w-full max-w-3xl min-h-0 overflow-y-auto pr-1">
               <div className="w-full flex flex-col items-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-4">
-              Badge ottenuto
-            </p>
             <h2 className="text-4xl sm:text-5xl font-bold leading-tight max-w-3xl">
               Ce l&apos;hai fatta!
             </h2>
@@ -482,28 +504,15 @@ export default function ProfileContent() {
                 rows={5}
                 className="mt-4 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-hidden focus:border-emerald-500"
               />
-              <label className="mt-3 flex items-center gap-2 text-xs text-zinc-300">
-                <input
-                  type="checkbox"
-                  checked={reviewIsPublic}
-                  onChange={(e) => setReviewIsPublic(e.target.checked)}
-                  disabled={reviewLoading || reviewComment.trim().length === 0}
-                />
-                Rendi pubblico il commento
-              </label>
+              <p className="mt-2 text-xs text-zinc-400">
+                Il commento viene pubblicato automaticamente se presente.
+              </p>
               {reviewError ? (
                 <p className="mt-2 text-xs text-red-300">{reviewError}</p>
               ) : null}
-              <div className="mt-4">
-                <button
-                  type="button"
-                  onClick={handleSaveReview}
-                  disabled={reviewLoading}
-                  className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-sm font-semibold disabled:opacity-60"
-                >
-                  {reviewLoading ? "Salvo..." : "Salva recensione"}
-                </button>
-              </div>
+              <p className="mt-3 text-xs text-zinc-400">
+                {reviewLoading ? "Salvataggio automatico..." : "Salvataggio automatico attivo"}
+              </p>
             </div>
               </div>
             </div>
