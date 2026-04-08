@@ -277,7 +277,7 @@ export default function ProfileContent() {
           </div>
         )}
 
-        <div className="mb-10 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 sm:p-5">
+        <div className="mb-10">
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">
             I miei completamenti
           </h2>
