@@ -51,7 +51,6 @@ export default function ProfileContent() {
   const [reviewRating, setReviewRating] = useState<number>(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewIsPublic, setReviewIsPublic] = useState(true);
-  const [isReviewEditorOpen, setIsReviewEditorOpen] = useState(false);
   const [reviewLoading, setReviewLoading] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
 
@@ -93,7 +92,6 @@ export default function ProfileContent() {
       setReviewRating(5);
       setReviewComment("");
       setReviewIsPublic(true);
-      setIsReviewEditorOpen(false);
       setReviewError(null);
       return;
     }
@@ -101,7 +99,6 @@ export default function ProfileContent() {
     setReviewComment("");
     setReviewIsPublic(true);
     setReviewError(null);
-    setIsReviewEditorOpen(false);
 
     let cancelled = false;
     void fetch(`/api/disciplines/reviews?linkId=${selectedBadge.id}`)
@@ -203,7 +200,6 @@ export default function ProfileContent() {
           typeof data.error === "string" ? data.error : "Impossibile salvare la recensione"
         );
       }
-      setIsReviewEditorOpen(false);
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Errore imprevisto");
     } finally {
@@ -418,8 +414,9 @@ export default function ProfileContent() {
 
       {selectedBadge && (
         <div className="fixed inset-0 z-70 bg-zinc-950/95 text-white">
-          <div className="min-h-full flex flex-col items-center px-6 py-10 text-center">
-            <div className="flex-1 w-full flex flex-col items-center justify-center">
+          <div className="h-full flex flex-col items-center px-4 sm:px-6 py-4 sm:py-6 text-center">
+            <div className="w-full max-w-3xl min-h-0 overflow-y-auto pr-1">
+              <div className="w-full flex flex-col items-center">
             <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-4">
               Badge ottenuto
             </p>
@@ -456,18 +453,62 @@ export default function ProfileContent() {
                 ? new Date(selectedBadge.completed_at).toLocaleDateString("it-IT")
                 : "—"}
             </p>
+            <div className="mt-8 w-full max-w-2xl rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 text-left">
+              <p className="text-sm font-semibold text-zinc-100">
+                La tua recensione
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    disabled={reviewLoading}
+                    className={`text-4xl leading-none transition-colors ${
+                      star <= reviewRating ? "text-amber-300" : "text-zinc-600 hover:text-zinc-400"
+                    }`}
+                    aria-label={`${star} stelle`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                maxLength={500}
+                disabled={reviewLoading}
+                placeholder="Scrivi un commento (opzionale)"
+                rows={5}
+                className="mt-4 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-hidden focus:border-emerald-500"
+              />
+              <label className="mt-3 flex items-center gap-2 text-xs text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={reviewIsPublic}
+                  onChange={(e) => setReviewIsPublic(e.target.checked)}
+                  disabled={reviewLoading || reviewComment.trim().length === 0}
+                />
+                Rendi pubblico il commento
+              </label>
+              {reviewError ? (
+                <p className="mt-2 text-xs text-red-300">{reviewError}</p>
+              ) : null}
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={handleSaveReview}
+                  disabled={reviewLoading}
+                  className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-sm font-semibold disabled:opacity-60"
+                >
+                  {reviewLoading ? "Salvo..." : "Salva recensione"}
+                </button>
+              </div>
             </div>
-            <div className="mt-8 w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsReviewEditorOpen((prev) => !prev);
-                  setReviewError(null);
-                }}
-                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
-              >
-                {isReviewEditorOpen ? "Chiudi modifica review" : "Modifica recensione"}
-              </button>
+              </div>
+            </div>
+            <div className="w-full max-w-3xl mt-4 pt-3 border-t border-zinc-800 bg-zinc-950/85">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => handleShareBadge(selectedBadge)}
@@ -475,60 +516,6 @@ export default function ProfileContent() {
               >
                 Condividi
               </button>
-              {isReviewEditorOpen ? (
-                <div className="sm:col-span-2 rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 text-left">
-                  <p className="text-sm font-semibold text-zinc-100">
-                    Aggiorna la tua recensione
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setReviewRating(star)}
-                        disabled={reviewLoading}
-                        className={`text-2xl transition-colors ${
-                          star <= reviewRating ? "text-amber-300" : "text-zinc-600 hover:text-zinc-400"
-                        }`}
-                        aria-label={`${star} stelle`}
-                      >
-                        ★
-                      </button>
-                    ))}
-                  </div>
-                  <textarea
-                    value={reviewComment}
-                    onChange={(e) => setReviewComment(e.target.value)}
-                    maxLength={500}
-                    disabled={reviewLoading}
-                    placeholder="Scrivi un commento (opzionale)"
-                    rows={4}
-                    className="mt-3 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-hidden focus:border-emerald-500"
-                  />
-                  <label className="mt-3 flex items-center gap-2 text-xs text-zinc-300">
-                    <input
-                      type="checkbox"
-                      checked={reviewIsPublic}
-                      onChange={(e) => setReviewIsPublic(e.target.checked)}
-                      disabled={reviewLoading || reviewComment.trim().length === 0}
-                    />
-                    Rendi pubblico il commento
-                  </label>
-                  {reviewError ? (
-                    <p className="mt-2 text-xs text-red-300">{reviewError}</p>
-                  ) : null}
-                  <div className="mt-3">
-                    <button
-                      type="button"
-                      onClick={handleSaveReview}
-                      disabled={reviewLoading}
-                      className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-sm font-semibold disabled:opacity-60"
-                    >
-                      {reviewLoading ? "Salvo..." : "Salva recensione"}
-                    </button>
-                  </div>
-                </div>
-              ) : null}
               <button
                 type="button"
                 onClick={() => setSelectedBadge(null)}
@@ -536,6 +523,7 @@ export default function ProfileContent() {
               >
                 Chiudi
               </button>
+              </div>
             </div>
           </div>
         </div>
