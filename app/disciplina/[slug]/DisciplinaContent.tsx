@@ -75,12 +75,19 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [sentDayNumbers, setSentDayNumbers] = useState<number[]>([]);
   const [activeDiscipline, setActiveDiscipline] = useState<ActiveDisciplineInfo | null>(null);
   const [completedAt, setCompletedAt] = useState<string | null>(null);
+  const [completedLinkId, setCompletedLinkId] = useState<number | null>(null);
   const [isBadgeOpen, setIsBadgeOpen] = useState(false);
   const [reviewSummary, setReviewSummary] = useState<{ count: number; avgRating: number | null }>({
     count: 0,
     avgRating: null,
   });
   const [publicReviews, setPublicReviews] = useState<DisciplineReview[]>([]);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewHydrated, setReviewHydrated] = useState(false);
+  const [lastSavedReviewKey, setLastSavedReviewKey] = useState<string | null>(null);
+  const [reviewError, setReviewError] = useState<string | null>(null);
   const { user, subscriptionInfo, refreshSubscription } = useAuth();
   /** Disciplina attiva: descrizione lunga in fisarmonica (chiusa di default) */
   const [longDescOpen, setLongDescOpen] = useState(false);
@@ -202,6 +209,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   useEffect(() => {
     if (!user) {
       setCompletedAt(null);
+      setCompletedLinkId(null);
       return;
     }
     let cancelled = false;
@@ -216,9 +224,13 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
           return disc?.slug === discipline.slug;
         });
         setCompletedAt(found?.completed_at ?? null);
+        setCompletedLinkId(found?.id ?? null);
       })
       .catch(() => {
-        if (!cancelled) setCompletedAt(null);
+        if (!cancelled) {
+          setCompletedAt(null);
+          setCompletedLinkId(null);
+        }
       });
     return () => {
       cancelled = true;
@@ -278,6 +290,106 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
       cancelled = true;
     };
   }, [discipline.id]);
+
+  useEffect(() => {
+    if (!isBadgeOpen || !completedLinkId) {
+      setReviewRating(5);
+      setReviewComment("");
+      setReviewHydrated(false);
+      setLastSavedReviewKey(null);
+      setReviewError(null);
+      return;
+    }
+    setReviewRating(5);
+    setReviewComment("");
+    setReviewHydrated(false);
+    setLastSavedReviewKey(null);
+    setReviewError(null);
+
+    let cancelled = false;
+    void fetch(`/api/disciplines/reviews?linkId=${completedLinkId}`)
+      .then((res) => res.json())
+      .then((data: { review?: { rating?: number; comment?: string } | null }) => {
+        if (cancelled) return;
+        if (!data.review) {
+          setReviewHydrated(true);
+          setLastSavedReviewKey("5|");
+          return;
+        }
+        const rating = Number(data.review.rating);
+        const normalizedRating =
+          Number.isFinite(rating) && rating >= 1 && rating <= 5 ? rating : 5;
+        const normalizedComment =
+          typeof data.review.comment === "string" ? data.review.comment : "";
+        setReviewRating(normalizedRating);
+        setReviewComment(normalizedComment);
+        setLastSavedReviewKey(`${normalizedRating}|${normalizedComment.trim()}`);
+        setReviewHydrated(true);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setReviewRating(5);
+          setReviewComment("");
+          setReviewHydrated(true);
+          setLastSavedReviewKey("5|");
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isBadgeOpen, completedLinkId]);
+
+  const saveReview = useCallback(async () => {
+    if (!completedLinkId) return;
+    if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
+      setReviewError("Seleziona un voto da 1 a 5 stelle.");
+      return;
+    }
+    setReviewLoading(true);
+    setReviewError(null);
+    try {
+      const res = await fetch("/api/disciplines/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          linkId: completedLinkId,
+          rating: reviewRating,
+          comment: reviewComment,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          typeof data.error === "string" ? data.error : "Impossibile salvare la recensione"
+        );
+      }
+      setLastSavedReviewKey(`${reviewRating}|${reviewComment.trim()}`);
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Errore imprevisto");
+    } finally {
+      setReviewLoading(false);
+    }
+  }, [completedLinkId, reviewRating, reviewComment]);
+
+  useEffect(() => {
+    if (!isBadgeOpen || !completedLinkId || !reviewHydrated) return;
+    const nextKey = `${reviewRating}|${reviewComment.trim()}`;
+    if (nextKey === lastSavedReviewKey) return;
+    const timer = window.setTimeout(() => {
+      void saveReview();
+    }, 700);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [
+    isBadgeOpen,
+    completedLinkId,
+    reviewHydrated,
+    reviewRating,
+    reviewComment,
+    lastSavedReviewKey,
+    saveReview,
+  ]);
 
   const joinedProgress = useMemo(
     () =>
@@ -551,6 +663,19 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
                   )}
                 </p>
               ) : null}
+              <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                {reviewSummary.count > 0 ? (
+                  <>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      {reviewSummary.avgRating?.toFixed(1)}
+                    </span>
+                    {" / 5 · "}
+                    {reviewSummary.count} recensioni
+                  </>
+                ) : (
+                  "0 recensioni"
+                )}
+              </p>
             </div>
             {/* Tag nascosto temporaneamente */}
             {/* {discipline.tag && (
@@ -599,48 +724,6 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         </div>
 
         {/* Description with Markdown — fisarmonica se la disciplina è attiva */}
-        <section className="mt-10 mb-8 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-5">
-          <h3 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-            Recensioni del percorso
-          </h3>
-          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-            {reviewSummary.count > 0 ? (
-              <>
-                <span className="font-semibold text-zinc-900 dark:text-zinc-100">
-                  {reviewSummary.avgRating?.toFixed(1)}
-                </span>
-                {" / 5 · "}
-                {reviewSummary.count} valutazioni
-              </>
-            ) : (
-              "Ancora nessuna valutazione."
-            )}
-          </p>
-          {publicReviews.length > 0 ? (
-            <div className="mt-4 space-y-3">
-              {publicReviews.map((review) => (
-                <article
-                  key={review.id}
-                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950 p-3"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {review.user_name}
-                    </p>
-                    <p className="text-amber-500 text-sm" aria-label={`Valutazione ${review.rating} su 5`}>
-                      {"★".repeat(review.rating)}
-                      <span className="text-zinc-400">{review.rating < 5 ? "☆".repeat(5 - review.rating) : ""}</span>
-                    </p>
-                  </div>
-                  {review.comment ? (
-                    <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">{review.comment}</p>
-                  ) : null}
-                </article>
-              ))}
-            </div>
-          ) : null}
-        </section>
-
         {discipline.long_desc && (
           <div className="prose prose-zinc dark:prose-invert max-w-none">
             <div
@@ -725,6 +808,49 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
           notificationPlan={discipline.notification_plan}
           joined={joined}
         />
+
+        <section className="mt-12">
+          <h3 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
+            Commenti della community
+          </h3>
+          {publicReviews.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {publicReviews.map((review) => (
+                <article
+                  key={review.id}
+                  className="rounded-lg border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      {review.user_name}
+                    </p>
+                    <p
+                      className="text-amber-500 text-sm"
+                      aria-label={`Valutazione ${review.rating} su 5`}
+                    >
+                      {"★".repeat(review.rating)}
+                      <span className="text-zinc-400">
+                        {review.rating < 5 ? "☆".repeat(5 - review.rating) : ""}
+                      </span>
+                    </p>
+                  </div>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    {new Date(review.created_at).toLocaleDateString("it-IT")}
+                  </p>
+                  {review.comment ? (
+                    <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">
+                      {review.comment}
+                    </p>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
+              Ancora nessun commento pubblico.
+            </p>
+          )}
+        </section>
       </main>
 
       {/* Footer */}
@@ -858,11 +984,19 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
 
       {isBadgeOpen && completedAt && (
         <div className="fixed inset-0 z-70 bg-zinc-950/95 text-white">
-          <div className="min-h-full flex flex-col items-center px-6 py-10 text-center">
-            <div className="flex-1 w-full flex flex-col items-center justify-center">
-            <p className="text-xs uppercase tracking-[0.2em] text-emerald-300 mb-4">
-              Badge ottenuto
-            </p>
+          <div className="h-full flex flex-col items-center px-4 sm:px-6 py-4 sm:py-6 text-center">
+            <div className="w-full max-w-3xl flex justify-end mb-2">
+              <button
+                type="button"
+                onClick={() => setIsBadgeOpen(false)}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-600 text-zinc-200 hover:border-zinc-300 hover:text-zinc-50 transition-colors"
+                aria-label="Chiudi"
+              >
+                <span className="text-2xl leading-none">×</span>
+              </button>
+            </div>
+            <div className="w-full max-w-3xl min-h-0 overflow-y-auto pr-1 pb-28 sm:pb-0">
+              <div className="w-full flex flex-col items-center">
             <h2 className="text-4xl sm:text-5xl font-bold leading-tight max-w-3xl">
               Ce l&apos;hai fatta!
             </h2>
@@ -881,8 +1015,43 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
             <p className="mt-2 text-sm text-zinc-300">
               Badge vinto il {new Date(completedAt).toLocaleDateString("it-IT")}
             </p>
+            <div className="mt-8 w-full max-w-2xl text-left">
+              <p className="text-sm font-semibold text-zinc-100">
+                La tua recensione
+              </p>
+              <div className="mt-3 flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    disabled={reviewLoading}
+                    className={`text-4xl leading-none transition-colors ${
+                      star <= reviewRating ? "text-amber-300" : "text-zinc-600 hover:text-zinc-400"
+                    }`}
+                    aria-label={`${star} stelle`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                maxLength={500}
+                disabled={reviewLoading}
+                placeholder="Scrivi un commento (opzionale)"
+                rows={5}
+                className="mt-4 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-hidden focus:border-emerald-500"
+              />
+              {reviewError ? (
+                <p className="mt-2 text-xs text-red-300">{reviewError}</p>
+              ) : null}
             </div>
-            <div className="mt-8 w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-3">
+            </div>
+            </div>
+            <div className="fixed inset-x-0 bottom-0 z-10 border-t border-zinc-800 bg-zinc-950/95 p-4 sm:static sm:w-full sm:max-w-3xl sm:mt-4 sm:pt-3 sm:p-0 sm:border-t sm:bg-transparent">
+              <div className="mx-auto w-full max-w-3xl grid grid-cols-1 sm:grid-cols-1 gap-3">
               <button
                 type="button"
                 onClick={handleShareBadge}
@@ -890,13 +1059,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               >
                 Condividi
               </button>
-              <button
-                type="button"
-                onClick={() => setIsBadgeOpen(false)}
-                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
-              >
-                Chiudi
-              </button>
+              </div>
             </div>
           </div>
         </div>
