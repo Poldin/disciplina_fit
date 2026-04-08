@@ -6,6 +6,7 @@ import Link from "next/link";
 import Header from "@/app/components/Header";
 import LoginDialog from "@/app/components/LoginDialog";
 import BadgeModal, { type BadgeModalBadge } from "@/app/components/BadgeModal";
+import NameDialog from "@/app/components/NameDialog";
 import { useAuth } from "@/app/components/AuthProvider";
 import { createClient } from "@/app/utils/supabase/client";
 import PushNotificationToggle from "@/app/components/PushNotificationToggle";
@@ -39,8 +40,9 @@ function formatActivationDate(iso: string) {
 
 export default function ProfileContent() {
   const router = useRouter();
-  const { user, loading, userName, signOut } = useAuth();
+  const { user, loading, userName, signOut, refreshProfile } = useAuth();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isEditNameOpen, setIsEditNameOpen] = useState(false);
   const [logoutOpen, setLogoutOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -142,7 +144,16 @@ export default function ProfileContent() {
         <div className="space-y-6 mb-8">
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Nome</p>
-            <p className="text-lg text-zinc-900 dark:text-zinc-50">{userName?.trim() || "—"}</p>
+            <div className="flex items-center gap-3">
+              <p className="text-lg text-zinc-900 dark:text-zinc-50">{userName?.trim() || "—"}</p>
+              <button
+                type="button"
+                onClick={() => setIsEditNameOpen(true)}
+                className="px-3 py-1 text-xs font-medium rounded-md border border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                Modifica
+              </button>
+            </div>
           </div>
           <div>
             <p className="text-xs font-medium uppercase tracking-wider text-zinc-500 dark:text-zinc-400 mb-1">Email</p>
@@ -269,6 +280,12 @@ export default function ProfileContent() {
       </main>
 
       <LoginDialog isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
+      <NameDialog
+        isOpen={isEditNameOpen}
+        initialName={userName}
+        onClose={() => setIsEditNameOpen(false)}
+        onSuccess={refreshProfile}
+      />
 
       {logoutOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">

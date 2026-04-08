@@ -1,18 +1,26 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const MAX_NAME_LENGTH = 15;
 
 interface NameDialogProps {
   isOpen: boolean;
+  initialName?: string | null;
+  onClose?: () => void;
   onSuccess: () => void;
 }
 
-export default function NameDialog({ isOpen, onSuccess }: NameDialogProps) {
+export default function NameDialog({ isOpen, initialName = "", onClose, onSuccess }: NameDialogProps) {
   const [userName, setUserName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setUserName((initialName ?? "").slice(0, MAX_NAME_LENGTH));
+    setError(null);
+  }, [isOpen, initialName]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,6 +53,7 @@ export default function NameDialog({ isOpen, onSuccess }: NameDialogProps) {
 
       setUserName("");
       onSuccess();
+      onClose?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Errore nel salvataggio");
     } finally {
@@ -62,7 +71,7 @@ export default function NameDialog({ isOpen, onSuccess }: NameDialogProps) {
       />
       <div className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md mx-4 py-8 px-4 border border-zinc-200 dark:border-zinc-800">
         <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50 mb-2">
-          Come ti chiami?
+          {onClose ? "Modifica nome" : "Come ti chiami?"}
         </h2>
         <p className="text-zinc-600 dark:text-zinc-400 mb-6">
           Inserisci il tuo nome per personalizzare la tua esperienza.
@@ -104,6 +113,16 @@ export default function NameDialog({ isOpen, onSuccess }: NameDialogProps) {
           >
             {isLoading ? "Salvataggio..." : "Salva"}
           </button>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={isLoading}
+              className="w-full py-3 border border-zinc-300 dark:border-zinc-700 text-zinc-900 dark:text-zinc-50 font-medium rounded-lg transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Annulla
+            </button>
+          )}
         </form>
       </div>
     </div>
