@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
         .eq("discipline_id", disciplineId),
       admin
         .from("discipline_reviews")
-        .select("id, rating, comment, created_at, profiles(user_name)")
+        .select("id, user_id, rating, comment, created_at")
         .eq("discipline_id", disciplineId)
         .eq("is_public", true)
         .not("comment", "is", null)
@@ -80,17 +80,46 @@ export async function GET(request: NextRequest) {
   const count = ratings.length;
   const avgRating = count > 0 ? ratings.reduce((sum, value) => sum + value, 0) / count : null;
 
+  const userIds = Array.from(
+    new Set(
+      (reviewRows ?? [])
+        .map((row) => (typeof row.user_id === "string" ? row.user_id : null))
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+
+  const { data: profileRows, error: profileError } =
+    userIds.length > 0
+      ? await admin
+          .from("profiles")
+          .select("id, user_name")
+          .in("id", userIds)
+      : { data: [], error: null };
+
+  if (profileError) {
+    console.error("[disciplines-reviews] profile fetch error", profileError);
+    return NextResponse.json({ error: "Errore server" }, { status: 500 });
+  }
+
+  const profileNameById = new Map<string, string>();
+  for (const row of profileRows ?? []) {
+    if (typeof row.id !== "string") continue;
+    profileNameById.set(
+      row.id,
+      typeof row.user_name === "string" && row.user_name.trim()
+        ? row.user_name.trim()
+        : "Utente disciplinaFIT"
+    );
+  }
+
   const reviews = (reviewRows ?? []).map((row) => {
-    const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+    const uid = typeof row.user_id === "string" ? row.user_id : "";
     return {
       id: row.id,
       rating: Number(row.rating),
       comment: row.comment,
       created_at: row.created_at,
-      user_name:
-        typeof profile?.user_name === "string" && profile.user_name.trim()
-          ? profile.user_name.trim()
-          : "Utente disciplinaFIT",
+      user_name: profileNameById.get(uid) ?? "Utente disciplinaFIT",
     };
   });
 

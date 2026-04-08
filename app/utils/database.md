@@ -24,6 +24,21 @@ CREATE TABLE public.day_chat_messages (
   CONSTRAINT fk_disc FOREIGN KEY (discipline_id) REFERENCES public.disciplines(id),
   CONSTRAINT fk_parent FOREIGN KEY (parent_id) REFERENCES public.day_chat_messages(id)
 );
+CREATE TABLE public.discipline_reviews (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  link_user_discipline_id bigint NOT NULL UNIQUE,
+  user_id uuid NOT NULL,
+  discipline_id uuid NOT NULL,
+  rating smallint NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  is_public boolean NOT NULL DEFAULT false,
+  CONSTRAINT discipline_reviews_pkey PRIMARY KEY (id),
+  CONSTRAINT discipline_reviews_link_user_discipline_id_fkey FOREIGN KEY (link_user_discipline_id) REFERENCES public.link_user_disciplines(id),
+  CONSTRAINT discipline_reviews_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id),
+  CONSTRAINT discipline_reviews_discipline_id_fkey FOREIGN KEY (discipline_id) REFERENCES public.disciplines(id)
+);
 CREATE TABLE public.disciplines (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   created_at timestamp with time zone NOT NULL DEFAULT now(),

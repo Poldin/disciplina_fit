@@ -51,6 +51,7 @@ export default function ProfileContent() {
   const [reviewRating, setReviewRating] = useState<number>(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewFetchLoading, setReviewFetchLoading] = useState(false);
   const [reviewHydrated, setReviewHydrated] = useState(false);
   const [lastSavedReviewKey, setLastSavedReviewKey] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -100,6 +101,7 @@ export default function ProfileContent() {
     setReviewRating(5);
     setReviewComment("");
     setReviewHydrated(false);
+    setReviewFetchLoading(true);
     setLastSavedReviewKey(null);
     setReviewError(null);
 
@@ -110,6 +112,7 @@ export default function ProfileContent() {
         if (cancelled) return;
         if (!data.review) {
           setReviewHydrated(true);
+          setReviewFetchLoading(false);
           setLastSavedReviewKey("5|");
           return;
         }
@@ -122,12 +125,14 @@ export default function ProfileContent() {
         setReviewComment(normalizedComment);
         setLastSavedReviewKey(`${normalizedRating}|${normalizedComment.trim()}`);
         setReviewHydrated(true);
+        setReviewFetchLoading(false);
       })
       .catch(() => {
         if (!cancelled) {
           setReviewRating(5);
           setReviewComment("");
           setReviewHydrated(true);
+          setReviewFetchLoading(false);
           setLastSavedReviewKey("5|");
         }
       });
@@ -489,31 +494,40 @@ export default function ProfileContent() {
               <p className="text-sm font-semibold text-zinc-100">
                 La tua recensione
               </p>
-              <div className="mt-3 flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setReviewRating(star)}
+              {reviewFetchLoading ? (
+                <div className="mt-3" aria-hidden>
+                  <div className="h-10 w-56 rounded bg-zinc-800 animate-pulse" />
+                  <div className="mt-4 h-28 w-full rounded-lg bg-zinc-800 animate-pulse" />
+                </div>
+              ) : (
+                <>
+                  <div className="mt-3 flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        disabled={reviewLoading}
+                        className={`text-4xl leading-none transition-colors ${
+                          star <= reviewRating ? "text-amber-300" : "text-zinc-600 hover:text-zinc-400"
+                        }`}
+                        aria-label={`${star} stelle`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    maxLength={500}
                     disabled={reviewLoading}
-                    className={`text-4xl leading-none transition-colors ${
-                      star <= reviewRating ? "text-amber-300" : "text-zinc-600 hover:text-zinc-400"
-                    }`}
-                    aria-label={`${star} stelle`}
-                  >
-                    ★
-                  </button>
-                ))}
-              </div>
-              <textarea
-                value={reviewComment}
-                onChange={(e) => setReviewComment(e.target.value)}
-                maxLength={500}
-                disabled={reviewLoading}
-                placeholder="Scrivi un commento (opzionale)"
-                rows={5}
-                className="mt-4 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-hidden focus:border-emerald-500"
-              />
+                    placeholder="Scrivi un commento (opzionale)"
+                    rows={5}
+                    className="mt-4 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-hidden focus:border-emerald-500"
+                  />
+                </>
+              )}
               {reviewError ? (
                 <p className="mt-2 text-xs text-red-300">{reviewError}</p>
               ) : null}

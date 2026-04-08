@@ -85,6 +85,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
   const [reviewRating, setReviewRating] = useState<number>(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewFetchLoading, setReviewFetchLoading] = useState(false);
   const [reviewHydrated, setReviewHydrated] = useState(false);
   const [lastSavedReviewKey, setLastSavedReviewKey] = useState<string | null>(null);
   const [reviewError, setReviewError] = useState<string | null>(null);
@@ -265,31 +266,34 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     };
   }, [user, joined, discipline.id]);
 
+  const loadReviews = useCallback(async () => {
+    const res = await fetch(`/api/disciplines/reviews?disciplineId=${encodeURIComponent(discipline.id)}`);
+    const data = (await res.json()) as {
+      summary?: { count?: number; avgRating?: number | null };
+      reviews?: DisciplineReview[];
+    };
+    setReviewSummary({
+      count: Number(data.summary?.count ?? 0),
+      avgRating:
+        typeof data.summary?.avgRating === "number"
+          ? Number(data.summary.avgRating)
+          : null,
+    });
+    setPublicReviews(Array.isArray(data.reviews) ? data.reviews : []);
+  }, [discipline.id]);
+
   useEffect(() => {
     let cancelled = false;
-    void fetch(`/api/disciplines/reviews?disciplineId=${encodeURIComponent(discipline.id)}`)
-      .then((res) => res.json())
-      .then((data: { summary?: { count?: number; avgRating?: number | null }; reviews?: DisciplineReview[] }) => {
-        if (cancelled) return;
-        setReviewSummary({
-          count: Number(data.summary?.count ?? 0),
-          avgRating:
-            typeof data.summary?.avgRating === "number"
-              ? Number(data.summary.avgRating)
-              : null,
-        });
-        setPublicReviews(Array.isArray(data.reviews) ? data.reviews : []);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setReviewSummary({ count: 0, avgRating: null });
-          setPublicReviews([]);
-        }
-      });
+    void loadReviews().catch(() => {
+      if (!cancelled) {
+        setReviewSummary({ count: 0, avgRating: null });
+        setPublicReviews([]);
+      }
+    });
     return () => {
       cancelled = true;
     };
-  }, [discipline.id]);
+  }, [loadReviews]);
 
   useEffect(() => {
     if (!isBadgeOpen || !completedLinkId) {
@@ -303,6 +307,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
     setReviewRating(5);
     setReviewComment("");
     setReviewHydrated(false);
+    setReviewFetchLoading(true);
     setLastSavedReviewKey(null);
     setReviewError(null);
 
@@ -313,6 +318,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         if (cancelled) return;
         if (!data.review) {
           setReviewHydrated(true);
+          setReviewFetchLoading(false);
           setLastSavedReviewKey("5|");
           return;
         }
@@ -325,12 +331,14 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         setReviewComment(normalizedComment);
         setLastSavedReviewKey(`${normalizedRating}|${normalizedComment.trim()}`);
         setReviewHydrated(true);
+        setReviewFetchLoading(false);
       })
       .catch(() => {
         if (!cancelled) {
           setReviewRating(5);
           setReviewComment("");
           setReviewHydrated(true);
+          setReviewFetchLoading(false);
           setLastSavedReviewKey("5|");
         }
       });
@@ -364,6 +372,7 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
         );
       }
       setLastSavedReviewKey(`${reviewRating}|${reviewComment.trim()}`);
+      void loadReviews();
     } catch (error) {
       setReviewError(error instanceof Error ? error.message : "Errore imprevisto");
     } finally {
@@ -1019,31 +1028,40 @@ export default function DisciplinaContent({ discipline }: DisciplinaContentProps
               <p className="text-sm font-semibold text-zinc-100">
                 La tua recensione
               </p>
-              <div className="mt-3 flex items-center gap-2">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setReviewRating(star)}
+              {reviewFetchLoading ? (
+                <div className="mt-3" aria-hidden>
+                  <div className="h-10 w-56 rounded bg-zinc-800 animate-pulse" />
+                  <div className="mt-4 h-28 w-full rounded-lg bg-zinc-800 animate-pulse" />
+                </div>
+              ) : (
+                <>
+                  <div className="mt-3 flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        disabled={reviewLoading}
+                        className={`text-4xl leading-none transition-colors ${
+                          star <= reviewRating ? "text-amber-300" : "text-zinc-600 hover:text-zinc-400"
+                        }`}
+                        aria-label={`${star} stelle`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    maxLength={500}
                     disabled={reviewLoading}
-                    className={`text-4xl leading-none transition-colors ${
-                      star <= reviewRating ? "text-amber-300" : "text-zinc-600 hover:text-zinc-400"
-                    }`}
-                    aria-label={`${star} stelle`}
-                  >
-                    ★
-                  </button>
-                ))}
-              </div>
-              <textarea
-                value={reviewComment}
-                onChange={(e) => setReviewComment(e.target.value)}
-                maxLength={500}
-                disabled={reviewLoading}
-                placeholder="Scrivi un commento (opzionale)"
-                rows={5}
-                className="mt-4 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-hidden focus:border-emerald-500"
-              />
+                    placeholder="Scrivi un commento (opzionale)"
+                    rows={5}
+                    className="mt-4 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-hidden focus:border-emerald-500"
+                  />
+                </>
+              )}
               {reviewError ? (
                 <p className="mt-2 text-xs text-red-300">{reviewError}</p>
               ) : null}
