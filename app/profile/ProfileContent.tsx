@@ -46,6 +46,7 @@ export default function ProfileContent() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [completionBadges, setCompletionBadges] = useState<CompletionBadge[]>([]);
+  const [completionBadgesLoading, setCompletionBadgesLoading] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<CompletionBadge | null>(null);
 
   useEffect(() => {
@@ -57,17 +58,23 @@ export default function ProfileContent() {
   useEffect(() => {
     if (!user) {
       setCompletionBadges([]);
+      setCompletionBadgesLoading(false);
       return;
     }
     let cancelled = false;
+    setCompletionBadgesLoading(true);
     void fetch("/api/user/completions")
       .then((res) => res.json())
       .then((data: { completions?: CompletionBadge[] }) => {
         if (cancelled) return;
         setCompletionBadges(data.completions ?? []);
+        setCompletionBadgesLoading(false);
       })
       .catch(() => {
-        if (!cancelled) setCompletionBadges([]);
+        if (!cancelled) {
+          setCompletionBadges([]);
+          setCompletionBadgesLoading(false);
+        }
       });
 
     return () => {
@@ -158,7 +165,24 @@ export default function ProfileContent() {
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 mb-3">
             I miei completamenti
           </h2>
-          {completionBadges.length === 0 ? (
+          {completionBadgesLoading ? (
+            <div className="space-y-3" aria-hidden>
+              <div className="animate-pulse flex items-center gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/40 px-3 py-2">
+                <div className="h-9 w-9 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+                <div className="min-w-0 flex-1">
+                  <div className="h-3 w-40 rounded bg-zinc-200 dark:bg-zinc-700 mb-2" />
+                  <div className="h-3 w-28 rounded bg-zinc-200 dark:bg-zinc-700" />
+                </div>
+              </div>
+              <div className="animate-pulse flex items-center gap-3 rounded-lg border border-zinc-200 dark:border-zinc-800 bg-zinc-50/80 dark:bg-zinc-800/40 px-3 py-2">
+                <div className="h-9 w-9 rounded-full bg-zinc-200 dark:bg-zinc-700" />
+                <div className="min-w-0 flex-1">
+                  <div className="h-3 w-36 rounded bg-zinc-200 dark:bg-zinc-700 mb-2" />
+                  <div className="h-3 w-24 rounded bg-zinc-200 dark:bg-zinc-700" />
+                </div>
+              </div>
+            </div>
+          ) : completionBadges.length === 0 ? (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">
               Nessun badge ancora. Completa il tuo primo percorso e comparira` qui.
             </p>
