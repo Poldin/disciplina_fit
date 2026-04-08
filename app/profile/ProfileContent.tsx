@@ -48,6 +48,12 @@ export default function ProfileContent() {
   const [completionBadges, setCompletionBadges] = useState<CompletionBadge[]>([]);
   const [completionBadgesLoading, setCompletionBadgesLoading] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<CompletionBadge | null>(null);
+  const [reviewRating, setReviewRating] = useState<number>(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewIsPublic, setReviewIsPublic] = useState(true);
+  const [isReviewEditorOpen, setIsReviewEditorOpen] = useState(false);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -81,6 +87,44 @@ export default function ProfileContent() {
       cancelled = true;
     };
   }, [user?.id]);
+
+  useEffect(() => {
+    if (!selectedBadge) {
+      setReviewRating(5);
+      setReviewComment("");
+      setReviewIsPublic(true);
+      setIsReviewEditorOpen(false);
+      setReviewError(null);
+      return;
+    }
+    setReviewRating(5);
+    setReviewComment("");
+    setReviewIsPublic(true);
+    setReviewError(null);
+    setIsReviewEditorOpen(false);
+
+    let cancelled = false;
+    void fetch(`/api/disciplines/reviews?linkId=${selectedBadge.id}`)
+      .then((res) => res.json())
+      .then((data: { review?: { rating?: number; comment?: string; isPublic?: boolean } | null }) => {
+        if (cancelled) return;
+        if (!data.review) return;
+        const rating = Number(data.review.rating);
+        setReviewRating(Number.isFinite(rating) && rating >= 1 && rating <= 5 ? rating : 5);
+        setReviewComment(typeof data.review.comment === "string" ? data.review.comment : "");
+        setReviewIsPublic(data.review.isPublic === true);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setReviewRating(5);
+          setReviewComment("");
+          setReviewIsPublic(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBadge?.id]);
 
   const email = user?.email || "—";
 
@@ -131,6 +175,39 @@ export default function ProfileContent() {
       }
     } catch {
       // no-op
+    }
+  };
+
+  const handleSaveReview = async () => {
+    if (!selectedBadge) return;
+    if (!reviewRating || reviewRating < 1 || reviewRating > 5) {
+      setReviewError("Seleziona un voto da 1 a 5 stelle.");
+      return;
+    }
+    setReviewLoading(true);
+    setReviewError(null);
+    try {
+      const res = await fetch("/api/disciplines/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          linkId: selectedBadge.id,
+          rating: reviewRating,
+          comment: reviewComment,
+          isPublic: reviewIsPublic,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          typeof data.error === "string" ? data.error : "Impossibile salvare la recensione"
+        );
+      }
+      setIsReviewEditorOpen(false);
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Errore imprevisto");
+    } finally {
+      setReviewLoading(false);
     }
   };
 
@@ -224,9 +301,17 @@ export default function ProfileContent() {
                     }}
                     className="flex items-center gap-3 rounded-lg border border-emerald-200/80 dark:border-emerald-700/60 bg-emerald-50/70 dark:bg-emerald-950/30 px-3 py-2"
                   >
-                    <div className="h-9 w-9 rounded-full bg-emerald-500 text-zinc-950 flex items-center justify-center font-bold">
-                      ✓
-                    </div>
+                    {disc?.img_url ? (
+                      <div className="h-10 w-10 rounded-md overflow-hidden border border-emerald-300/80 dark:border-emerald-700/70 shrink-0">
+                        <img
+                          src={disc.img_url}
+                          alt={disc.title ?? "Disciplina"}
+                          className="h-full w-full object-cover"
+                        />
+                      </div>
+                    ) : (
+                      <div className="h-10 w-10 rounded-md bg-linear-to-br from-emerald-200 to-emerald-300 dark:from-emerald-900 dark:to-emerald-800 shrink-0" />
+                    )}
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 truncate">
                         {disc?.title ?? "Percorso completato"}
@@ -375,11 +460,75 @@ export default function ProfileContent() {
             <div className="mt-8 w-full max-w-2xl grid grid-cols-1 sm:grid-cols-2 gap-3">
               <button
                 type="button"
+                onClick={() => {
+                  setIsReviewEditorOpen((prev) => !prev);
+                  setReviewError(null);
+                }}
+                className="px-6 py-3 rounded-lg border border-zinc-500 hover:border-zinc-300 text-zinc-100 font-semibold transition-colors"
+              >
+                {isReviewEditorOpen ? "Chiudi modifica review" : "Modifica recensione"}
+              </button>
+              <button
+                type="button"
                 onClick={() => handleShareBadge(selectedBadge)}
                 className="px-6 py-3 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 font-semibold transition-colors"
               >
                 Condividi
               </button>
+              {isReviewEditorOpen ? (
+                <div className="sm:col-span-2 rounded-xl border border-zinc-700 bg-zinc-900/60 p-4 text-left">
+                  <p className="text-sm font-semibold text-zinc-100">
+                    Aggiorna la tua recensione
+                  </p>
+                  <div className="mt-2 flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewRating(star)}
+                        disabled={reviewLoading}
+                        className={`text-2xl transition-colors ${
+                          star <= reviewRating ? "text-amber-300" : "text-zinc-600 hover:text-zinc-400"
+                        }`}
+                        aria-label={`${star} stelle`}
+                      >
+                        ★
+                      </button>
+                    ))}
+                  </div>
+                  <textarea
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    maxLength={500}
+                    disabled={reviewLoading}
+                    placeholder="Scrivi un commento (opzionale)"
+                    rows={4}
+                    className="mt-3 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-hidden focus:border-emerald-500"
+                  />
+                  <label className="mt-3 flex items-center gap-2 text-xs text-zinc-300">
+                    <input
+                      type="checkbox"
+                      checked={reviewIsPublic}
+                      onChange={(e) => setReviewIsPublic(e.target.checked)}
+                      disabled={reviewLoading || reviewComment.trim().length === 0}
+                    />
+                    Rendi pubblico il commento
+                  </label>
+                  {reviewError ? (
+                    <p className="mt-2 text-xs text-red-300">{reviewError}</p>
+                  ) : null}
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={handleSaveReview}
+                      disabled={reviewLoading}
+                      className="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-zinc-950 text-sm font-semibold disabled:opacity-60"
+                    >
+                      {reviewLoading ? "Salvo..." : "Salva recensione"}
+                    </button>
+                  </div>
+                </div>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setSelectedBadge(null)}

@@ -10,9 +10,47 @@ type ReviewBody = {
 };
 
 export async function GET(request: NextRequest) {
+  const linkIdParam = request.nextUrl.searchParams.get("linkId")?.trim();
   const disciplineId = request.nextUrl.searchParams.get("disciplineId")?.trim();
+  if (linkIdParam) {
+    const linkId = Number(linkIdParam);
+    if (!Number.isFinite(linkId)) {
+      return NextResponse.json({ error: "linkId non valido" }, { status: 400 });
+    }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      return NextResponse.json({ error: "Non autorizzato" }, { status: 401 });
+    }
+
+    const admin = createAdminClient();
+    const { data: row, error } = await admin
+      .from("discipline_reviews")
+      .select("rating, comment, is_public")
+      .eq("link_user_discipline_id", linkId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("[disciplines-reviews] own review fetch error", error);
+      return NextResponse.json({ error: "Errore server" }, { status: 500 });
+    }
+
+    return NextResponse.json({
+      review: row
+        ? {
+            rating: Number(row.rating),
+            comment: row.comment ?? "",
+            isPublic: row.is_public === true,
+          }
+        : null,
+    });
+  }
+
   if (!disciplineId) {
-    return NextResponse.json({ error: "disciplineId richiesto" }, { status: 400 });
+    return NextResponse.json({ error: "disciplineId o linkId richiesto" }, { status: 400 });
   }
 
   const admin = createAdminClient();
